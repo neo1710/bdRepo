@@ -1,0 +1,53 @@
+
+.greet{
+    width: 100%;
+}
+
+.msg{
+    display: flex;
+    justify-content: space-around;
+    align-items: center;
+    width: 80%;
+    margin: auto;
+
+}
+
+.gCard{
+  width: 50%;  
+  background: url(../Media/Screenshot\ \(198\).png);
+  background-position:center ;
+  border-radius: 15px;
+  overflow: hidden;
+  background-repeat: no-repeat;
+}
+
+.gCard>p{
+  color: white;
+}
+
+.msg>button{
+  width: 12%;
+}
+
+.cat{
+  width: 60%;
+  margin: auto;
+  margin-top: 30px;
+  background: url(../Media/cat.jpg);
+  background-repeat:no-repeat ;
+  background-position: center;
+  background-size: contain;
+
+}
+
+@media screen and (max-width:430px) {
+  
+.gCard{
+  width: 60%;
+  background: url(../Media/vertical.png);
+  background-position: center;
+  background-size:cover;
+  background-repeat: no-repeat;
+}
+
+}

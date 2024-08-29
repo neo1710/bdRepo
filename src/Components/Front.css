@@ -1,0 +1,149 @@
+.Front{
+    width: 100%;
+    /* background: url(); */
+}
+
+.vid{
+    height: 500px;
+    width: 40%;
+    margin: auto;
+    margin-top: 20px;;
+    overflow: hidden; /* Ensures the video doesn't overflow */
+    display: flex; /* Use flexbox to center content */
+    align-items: center; /* Center vertically */
+    justify-content: center; /* Center horizontally */
+    border-radius: 15px;
+   
+}
+
+.video-background{
+    object-fit: cover;
+    filter: blur(3px);
+}
+
+p{
+    position: absolute;
+    text-align: center;
+    z-index: 1;
+    color: white;
+    font-size: 1.5rem;
+    font-weight: bold;
+  
+}
+
+.slider{
+width: 60%;
+
+display: flex;
+margin: auto;
+margin-top: 30px;
+justify-content: space-around;
+align-items: center;
+
+}
+
+.slideImg{
+width: 40%;
+}
+
+audio{
+    display: block;
+    margin: auto;
+    margin-top: 40px;
+    width: 50%;
+}
+
+audio::-webkit-media-controls-panel {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    background-color: rgba(0, 0, 0, 0.7); /* Adjust background color */
+    padding: 10px;
+    border-radius: 5px;
+  }
+
+audio::-webkit-media-controls-play-button,
+audio::-webkit-media-controls-mute-button,
+audio::-webkit-media-controls-volume-slider {
+  background-color: #fff; /* Adjust button background color */
+  color: #333; /* Adjust button text color */
+  border: none; /* Remove border */
+  padding: 5px; /* Adjust padding */
+  border-radius: 3px; /* Adjust border radius */
+  cursor: pointer; /* Show pointer cursor */
+}
+
+/* Optional: Style for timeline/progress bar */
+audio::-webkit-media-controls-timeline {
+  background-color: #333; /* Adjust timeline background color */
+  height: 5px; /* Adjust timeline height */
+  border-radius: 2px; /* Adjust timeline border radius */
+}
+
+/* Optional: Style for time display */
+audio::-webkit-media-controls-current-time-display,
+audio::-webkit-media-controls-time-remaining-display {
+  color: #fff; /* Adjust text color */
+  font-size: 12px; /* Adjust font size */
+  margin: 0 5px; /* Adjust margin */
+}
+
+h3{
+    display: none;
+}
+
+@media screen and (max-width: 430px){
+    .vid{
+        height: 500px;
+        width: 70%;
+        margin: auto;
+        overflow: hidden; /* Ensures the video doesn't overflow */
+        display: flex; /* Use flexbox to center content */
+        align-items: center; /* Center vertically */
+        justify-content: center; /* Center horizontally */
+        border-radius: 15px;
+
+    }
+
+
+    p{
+        position: absolute;
+        text-align: center;
+        z-index: 1;
+        color: white;
+        font-size: 1rem;
+        font-weight: bold;
+      
+    }
+
+
+    .slider{
+        width: 100%;
+        
+        display: flex;
+        margin: auto;
+        margin-top: 30px;
+        justify-content: space-around;
+        align-items: center;
+        }
+        
+        .slideImg{
+        width: 40%;
+        }
+
+        audio{
+            display: block;
+            margin: auto;
+            margin-top: 40px;
+            width: 80%;
+
+
+        }
+    
+        h3{
+            display: block;
+            color: orange;
+        }
+
+
+}
