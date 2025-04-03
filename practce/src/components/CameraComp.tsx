@@ -1,89 +1,107 @@
-"use client"; // Required for Next.js App Router
+"use client";
 
 import { useEffect, useRef, useState } from "react";
+import * as faceapi from "face-api.js";
+
+const MODEL_URL = "https://cdn.jsdelivr.net/npm/@vladmandic/face-api/model/";
 
 const CameraComponent = () => {
   const videoRef = useRef<HTMLVideoElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
+  const [expression, setExpression] = useState<string>("");
+  const [isCameraActive, setIsCameraActive] = useState<boolean>(false);
   const [stream, setStream] = useState<MediaStream | null>(null);
-  const [isCameraOn, setIsCameraOn] = useState(false);
-  const [motionDetected, setMotionDetected] = useState(false);
-  let prevFrame: ImageData | null = null;
-  
+
   useEffect(() => {
-    return () => stopCamera(); // Ensure camera stops when component unmounts
+    const loadModels = async () => {
+      await faceapi.nets.tinyFaceDetector.loadFromUri(MODEL_URL);
+      console.log("TinyFaceDetector model loaded");
+      await faceapi.nets.faceLandmark68Net.loadFromUri(MODEL_URL);
+      console.log("FaceLandmark68Net model loaded");
+      await faceapi.nets.faceExpressionNet.loadFromUri(MODEL_URL);
+      console.log("FaceExpressionNet model loaded");
+    };
+
+    loadModels();
   }, []);
-  
+
+  useEffect(() => {
+    let interval: NodeJS.Timeout;
+
+    const analyzeFace = async () => {
+      if (videoRef.current && canvasRef.current) {
+        const detections = await faceapi
+          .detectSingleFace(videoRef.current, new faceapi.TinyFaceDetectorOptions())
+          .withFaceLandmarks()
+          .withFaceExpressions();
+
+        if (detections) {
+          const expressions = detections.expressions;
+          const maxValue = Math.max(...Object.values(expressions));
+          const detectedExpression = Object.keys(expressions).find(
+            (key) => expressions[key as keyof typeof expressions] === maxValue
+          );
+          setExpression(detectedExpression || "");
+        }
+      }
+    };
+
+    if (isCameraActive) {
+      interval = setInterval(analyzeFace, 500);
+    }
+
+    return () => {
+      if (interval) clearInterval(interval);
+    };
+  }, [isCameraActive]);
+
   const startCamera = async () => {
     try {
-      const mediaStream = await navigator.mediaDevices.getUserMedia({ video: true });
+      const userStream = await navigator.mediaDevices.getUserMedia({ video: {} });
+      setStream(userStream);
       if (videoRef.current) {
-        videoRef.current.srcObject = mediaStream;
+        videoRef.current.srcObject = userStream;
+        videoRef.current.onloadedmetadata = () => {
+          console.log("Video metadata loaded");
+        };
+        videoRef.current.onerror = (error) => {
+          console.error("Video error:", error);
+        };
       }
-      setStream(mediaStream);
-      setIsCameraOn(true);
-    } catch (err) {
-      console.error("Error accessing camera:", err);
+      setIsCameraActive(true);
+    } catch (error) {
+      console.error("Error accessing webcam:", error);
     }
   };
-console.log(stream);
+
   const stopCamera = () => {
     if (stream) {
       stream.getTracks().forEach((track) => track.stop());
       setStream(null);
-      setIsCameraOn(false);
-    }
-  };
-  const detectMotion = () => {
-    if (!canvasRef.current || !videoRef.current) return;
-
-    const ctx = canvasRef.current.getContext("2d");
-    if (!ctx) return;
-
-    ctx.drawImage(videoRef.current, 0, 0, canvasRef.current.width, canvasRef.current.height);
-    const frame = ctx.getImageData(0, 0, canvasRef.current.width, canvasRef.current.height);
-
-    if (prevFrame) {
-      let diff = 0;
-      for (let i = 0; i < frame.data.length; i += 4) {
-        const rDiff = Math.abs(frame.data[i] - prevFrame.data[i]);
-        const gDiff = Math.abs(frame.data[i + 1] - prevFrame.data[i + 1]);
-        const bDiff = Math.abs(frame.data[i + 2] - prevFrame.data[i + 2]);
-
-        if (rDiff + gDiff + bDiff > 50) diff++;
+      if (videoRef.current) {
+        videoRef.current.srcObject = null;
       }
-
-      setMotionDetected(diff > 5000); // Adjust threshold as needed
+      setIsCameraActive(false);
+      console.log("Webcam stream stopped");
     }
-
-    prevFrame = frame;
-    requestAnimationFrame(detectMotion);
   };
 
-  useEffect(() => {
-    if (isCameraOn) {
-      setTimeout(() => detectMotion(), 500); // Start motion detection
+  const toggleCamera = () => {
+    if (isCameraActive) {
+      stopCamera();
+    } else {
+      startCamera();
     }
-  }, [isCameraOn]);
-
-
+  };
 
   return (
-    <div className="flex flex-col items-center space-y-4 p-3 border border-gray-700">
-      <video ref={videoRef} autoPlay playsInline className="w-[40%] max-w-md rounded-lg shadow-lg" />
-      <canvas ref={canvasRef} className="hidden" width={300} height={200} />
-
-      <div className="flex space-x-4">
-        {!isCameraOn ? (
-          <button onClick={startCamera} className="px-4 py-2 bg-green-500 hover:bg-green-700 transition duration-500 text-white rounded-lg">
-            Start Camera
-          </button>
-        ) : (
-          <button onClick={stopCamera} className="px-4 py-2 bg-red-500 hover:bg-red-700 transition duration-500 text-white rounded-lg">
-            Stop Camera
-          </button>
-        )}
-      </div>
+    <div>
+      <video ref={videoRef} autoPlay playsInline style={{ width: 400, height: 300, display: isCameraActive ? "block" : "none" }} />
+      <canvas ref={canvasRef} style={{ display: "none" }} />
+      <p>Expression: {expression}</p>
+      <button onClick={toggleCamera}>
+        {isCameraActive ? "Stop Camera" : "Start Camera"}
+      </button>
     </div>
   );
 };
