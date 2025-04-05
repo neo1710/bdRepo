@@ -202,16 +202,16 @@ export default function InteractiveAvatar() {
               >
                 <track kind="captions" />
               </video>
-              <div className="flex flex-col gap-2 bottom-3 right-3">
+             <div className="flex gap-2 bottom-3 right-3">
                 <Button
-                  className="bg-gradient-to-tr from-indigo-500 to-indigo-300 text-white rounded-lg"
+                  className="p-2 bg-green-500 text-white rounded-lg rounded hover:bg-green-700"
                   size="md"
                   onClick={handleInterrupt}
                 >
                   Interrupt task
                 </Button>
                 <Button
-                  className="bg-gradient-to-tr from-indigo-500 to-indigo-300  text-white rounded-lg"
+                  className="p-2 bg-green-500 text-white rounded-lg rounded hover:bg-green-700"
                   size="md"
                   onClick={endSession}
                 >
@@ -222,7 +222,7 @@ export default function InteractiveAvatar() {
           ) : !isLoadingSession ? (
             <div className="h-full justify-center items-center flex flex-col gap-8 w-[500px] self-center">
               <div className="flex flex-col gap-2 w-full">
-                <p className="text-sm font-medium leading-none">
+                {/* <p className="text-sm font-medium leading-none">
                   Custom Knowledge ID (optional)
                 </p>
                 <Input
@@ -237,10 +237,10 @@ export default function InteractiveAvatar() {
   placeholder="Enter a custom avatar ID"
   value={avatarId}
   onChange={(e: React.ChangeEvent<HTMLInputElement>) => setAvatarId(e.target.value)}
-/>
+/> */}
               </div>
               <Button
-                className="bg-gradient-to-tr from-indigo-500 to-indigo-300 w-full text-white"
+                className="p-2 bg-green-500 text-white rounded hover:bg-green-700"
                 size="md"
                 onClick={startSession}
               >
@@ -268,7 +268,7 @@ export default function InteractiveAvatar() {
           ) : (
             <div className="w-full text-center">
               <Button
-                className="bg-gradient-to-tr from-indigo-500 to-indigo-300 text-white"
+                className="p-2 bg-green-500 text-white rounded hover:bg-green-700"
                 size="md"
               >
                 {isUserTalking ? "Listening" : "Voice chat"}

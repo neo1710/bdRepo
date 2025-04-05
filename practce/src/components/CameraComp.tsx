@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import * as faceapi from "face-api.js";
+import { Button } from "@nextui-org/react";
 
 const MODEL_URL = "https://cdn.jsdelivr.net/npm/@vladmandic/face-api/model/";
 
@@ -95,13 +96,13 @@ const CameraComponent = () => {
   };
 
   return (
-    <div className="w-[50%]">
+    <div className="w-[50%] h-[500px]">
       <video ref={videoRef} autoPlay playsInline style={{ width: 400, height: 300, display: isCameraActive ? "block" : "none" }} />
       <canvas ref={canvasRef} style={{ display: "none" }} />
       <p>Expression: {expression}</p>
-      <button onClick={toggleCamera}>
+      <Button onPress={toggleCamera} className="p-2 bg-green-500 text-white rounded hover:bg-green-700">
         {isCameraActive ? "Stop Camera" : "Start Camera"}
-      </button>
+      </Button>
     </div>
   );
 };
