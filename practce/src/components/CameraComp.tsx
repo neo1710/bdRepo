@@ -95,7 +95,7 @@ const CameraComponent = () => {
   };
 
   return (
-    <div>
+    <div className="w-[50%]">
       <video ref={videoRef} autoPlay playsInline style={{ width: 400, height: 300, display: isCameraActive ? "block" : "none" }} />
       <canvas ref={canvasRef} style={{ display: "none" }} />
       <p>Expression: {expression}</p>
