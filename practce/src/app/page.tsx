@@ -1,16 +1,22 @@
 "use client"
 import InteractiveAvatar from "@/components/AvatarInteractionComp";
 import CameraComponent from "@/components/CameraComp";
+import { Nav } from "@/components/Nav";
 import { VoiceHandler } from "@/components/VoiceHandler";
+import { store } from "@/store";
 import { useState } from "react";
+import { Provider } from "react-redux";
 
 export default function Home() {
-  return ( <div className="w-full">
-    <div className="font-[family-name:var(--font-geist-sans)] flex w-full">
-      <CameraComponent/>
-      <InteractiveAvatar/>
-    </div>
-    <VoiceHandler/>
-    </div>
+  return (<div className="w-full">
+    <Provider store={store}>
+      <Nav />
+      <div className="font-[family-name:var(--font-geist-sans)] flex w-full">
+        <CameraComponent />
+        <InteractiveAvatar />
+      </div>
+      <VoiceHandler />
+    </Provider>
+  </div>
   );
 }

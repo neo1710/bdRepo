@@ -19,6 +19,7 @@ import { useEffect, useRef, useState } from "react";
 import { AVATARS, STT_LANGUAGE_LIST } from "../app/lib/contants";
 
 import InteractiveAvatarTextInput from "./InteractiveAvatarTextInput";
+import { useSelector } from "react-redux";
 
 export default function InteractiveAvatar() {
   const [isLoadingSession, setIsLoadingSession] = useState(false);
@@ -28,6 +29,7 @@ export default function InteractiveAvatar() {
   const [knowledgeId, setKnowledgeId] = useState<string>("");
   const [avatarId, setAvatarId] = useState<string>("");
   const [language, setLanguage] = useState<string>("en");
+  const [previousChunk, setPreviousChunk] = useState<number>(0);
 
   const [data, setData] = useState<StartAvatarResponse>();
   const [text, setText] = useState<string>("");
@@ -35,6 +37,11 @@ export default function InteractiveAvatar() {
   const avatar = useRef<StreamingAvatar | null>(null);
   const [chatMode, setChatMode] = useState("text_mode");
   const [isUserTalking, setIsUserTalking] = useState(false);
+  const { messagesHistory } = useSelector((state: any) => state.conversation)
+
+  useEffect(() => {
+    handleSpeak();
+  }, [messagesHistory])
 
   function baseApiUrl() {
     return process.env.NEXT_PUBLIC_BASE_API_URL;
@@ -79,14 +86,14 @@ export default function InteractiveAvatar() {
       console.log(">>>>> Stream ready:", event.detail);
       setStream(event.detail);
     });
-    avatar.current?.on(StreamingEvents.USER_START, (event) => {
-      console.log(">>>>> User started talking:", event);
-      setIsUserTalking(true);
-    });
-    avatar.current?.on(StreamingEvents.USER_STOP, (event) => {
-      console.log(">>>>> User stopped talking:", event);
-      setIsUserTalking(false);
-    });
+    // avatar.current?.on(StreamingEvents.USER_START, (event) => {
+    //   console.log(">>>>> User started talking:", event);
+    //   setIsUserTalking(true);
+    // });
+    // avatar.current?.on(StreamingEvents.USER_STOP, (event) => {
+    //   console.log(">>>>> User stopped talking:", event);
+    //   setIsUserTalking(false);
+    // });
     try {
       const res = await avatar.current.createStartAvatar({
         quality: AvatarQuality.Low,
@@ -108,10 +115,10 @@ export default function InteractiveAvatar() {
 
       setData(res);
       // default to voice mode
-      await avatar.current?.startVoiceChat({
-        useSilencePrompt: false,
-      });
-      setChatMode("voice_mode");
+      // await avatar.current?.startVoiceChat({
+      //   useSilencePrompt: false,
+      // });
+      // setChatMode("voice_mode");
     } catch (error) {
       console.error("Error starting avatar session:", error);
     } finally {
@@ -120,14 +127,27 @@ export default function InteractiveAvatar() {
   }
   async function handleSpeak() {
     setIsLoadingRepeat(true);
-    if (!avatar.current) {
+    if (!avatar.current || !messagesHistory || messagesHistory.length === 0 || messagesHistory[messagesHistory.length - 1].role === "user") {
       setDebug("Avatar API not initialized");
-
+      console.log("Messages history:", messagesHistory);
       return;
     }
+
+    const speakableText =
+      previousChunk === 0
+        ? messagesHistory[messagesHistory.length - 1].content
+        : messagesHistory[messagesHistory.length - 1].content.slice(
+          previousChunk,
+          messagesHistory[messagesHistory.length - 1].content.length,
+        );
+    // setiing the value of previous chunk to the length of the last message
+    if (messagesHistory[messagesHistory.length - 1].role !== 'user') {
+      setPreviousChunk(messagesHistory[messagesHistory.length - 1].content.length);
+    }
+    console.log("Avatar API initialized, speaking:", messagesHistory[messagesHistory.length - 1]);
     // speak({ text: text, task_type: TaskType.REPEAT })
     await avatar.current
-      .speak({ text: text, taskType: TaskType.REPEAT, taskMode: TaskMode.SYNC })
+      .speak({ text: speakableText, taskType: TaskType.REPEAT, taskMode: TaskMode.SYNC })
       .catch((e) => {
         setDebug(e.message);
       });
@@ -148,7 +168,7 @@ export default function InteractiveAvatar() {
     setStream(undefined);
   }
 
-  const handleChangeChatMode = async (v:any) => {
+  const handleChangeChatMode = async (v: any) => {
     if (v === chatMode) {
       return;
     }
@@ -186,95 +206,78 @@ export default function InteractiveAvatar() {
   }, [mediaStream, stream]);
 
   return (
-    <div className="w-50% flex flex-col gap-4">
+    <div className="w-[50%] h-[500px] flex flex-col gap-4 p-2 bg-gray-200 border border-left-1 border-black">
       <Card>
-          {stream ? (
-            <div className="h-[500px] justify-center items-center flex rounded-lg overflow-hidden">
-              <video
-                ref={mediaStream}
-                autoPlay
-                playsInline
-                style={{
-                  width: "100%",
-                  height: "100%",
-                  objectFit: "contain",
-                }}
-              >
-                <track kind="captions" />
-              </video>
-             <div className="flex gap-2 bottom-3 right-3">
-                <Button
-                  className="p-2 bg-green-500 text-white rounded-lg rounded hover:bg-green-700"
-                  size="md"
-                  onClick={handleInterrupt}
-                >
-                  Interrupt task
-                </Button>
-                <Button
-                  className="p-2 bg-green-500 text-white rounded-lg rounded hover:bg-green-700"
-                  size="md"
-                  onClick={endSession}
-                >
-                  End session
-                </Button>
-              </div>
-            </div>
-          ) : !isLoadingSession ? (
-            <div className="h-full justify-center items-center flex flex-col gap-8 w-[500px] self-center">
-              <div className="flex flex-col gap-2 w-full">
-                {/* <p className="text-sm font-medium leading-none">
-                  Custom Knowledge ID (optional)
-                </p>
-                <Input
-                  placeholder="Enter a custom knowledge ID"
-                  value={knowledgeId}
-                  onChange={(e :React.ChangeEvent<HTMLInputElement>) => setKnowledgeId(e.target.value)}
-                />
-                <p className="text-sm font-medium leading-none">
-                  Custom Avatar ID (optional)
-                </p>
-                <Input
-  placeholder="Enter a custom avatar ID"
-  value={avatarId}
-  onChange={(e: React.ChangeEvent<HTMLInputElement>) => setAvatarId(e.target.value)}
-/> */}
-              </div>
+        {stream ? (
+          <div className="w-full h-[400px] w-[400px] justify-center items-center flex rounded-lg overflow-hidden">
+            <video
+              ref={mediaStream}
+              autoPlay
+              playsInline
+              style={{
+                width: "100%",
+                height: "100%",
+                objectFit: "contain",
+              }}
+            >
+              <track kind="captions" />
+            </video>
+            <div className="flex gap-2 bottom-3 right-3 w-full">
               <Button
-                className="p-2 bg-green-500 text-white rounded hover:bg-green-700"
+                className="p-2 bg-green-500 text-white rounded-lg rounded hover:bg-green-700"
                 size="md"
-                onClick={startSession}
+                onPress={handleInterrupt}
               >
-                Start session
+                Interrupt task
+              </Button>
+              <Button
+                className="p-2 bg-green-500 text-white rounded-lg rounded hover:bg-green-700"
+                size="md"
+                onPress={endSession}
+              >
+                End session
               </Button>
             </div>
-          ) : (
-            <Spinner color="default" size="lg" />
-          )}
-          {chatMode === "text_mode" ? (
-            <div className="flex relative">
-              <InteractiveAvatarTextInput
-                disabled={!stream}
-                input={text}
-                label="Chat"
-                loading={isLoadingRepeat}
-                placeholder="Type something for the avatar to respond"
-                setInput={setText}
-                onSubmit={handleSpeak}
-              />
-              {text && (
-                <div className="absolute right-16 top-3">Listening</div>
-              )}
-            </div>
-          ) : (
-            <div className="w-full text-center">
-              <Button
-                className="p-2 bg-green-500 text-white rounded hover:bg-green-700"
-                size="md"
-              >
-                {isUserTalking ? "Listening" : "Voice chat"}
-              </Button>
-            </div>
-          )}
+          </div>
+        ) : !isLoadingSession ? (
+          <div className="w-full h-[500px] justify-center items-center flex flex-col gap-8 self-center">
+            <Button
+              className="p-2 bg-green-500 text-white rounded hover:bg-green-700"
+              size="md"
+              onPress={startSession}
+            >
+              Start session
+            </Button>
+
+          </div>
+        ) : (
+          <Spinner color="default" size="lg" />
+        )}
+        {chatMode === "text_mode" ? (
+          <div className="flex relative">
+            <InteractiveAvatarTextInput
+              disabled={!stream}
+              input={text}
+              label="Chat"
+              loading={isLoadingRepeat}
+              placeholder="Type something for the avatar to respond"
+              setInput={setText}
+              onSubmit={handleSpeak}
+            />
+            {text && (
+              <div className="absolute right-16 top-3">Listening</div>
+            )}
+          </div>
+        ) : (
+          <div className="w-full text-center">
+            <Button
+              className="p-2 bg-green-500 text-white rounded hover:bg-green-700"
+              size="md"
+            >
+              {isUserTalking ? "Listening" : "Voice chat"}
+            </Button>
+          </div>
+        )}
       </Card>
     </div>
   );
