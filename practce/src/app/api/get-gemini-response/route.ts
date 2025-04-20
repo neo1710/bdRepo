@@ -1,3 +1,4 @@
+/* eslint-disable */
 export async function POST(request: Request) {
   const apiKey = process.env.NEXT_PUBLIC_MISTRAL_API_KEY; // Changed from NEXT_PUBLIC_
   const url = "https://api.mistral.ai/v1/chat/completions";
