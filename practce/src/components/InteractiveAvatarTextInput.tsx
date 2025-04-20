@@ -1,5 +1,4 @@
-import { AnyARecord } from "dns";
-import { Input, Spinner, Tooltip } from "@nextui-org/react";
+import { Input } from "@nextui-org/react";
 /* eslint-disable */
 interface StreamingAvatarTextInputProps {
   label: string;
