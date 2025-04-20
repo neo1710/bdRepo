@@ -4,7 +4,6 @@ import CameraComponent from "@/components/CameraComp";
 import { Nav } from "@/components/Nav";
 import { VoiceHandler } from "@/components/VoiceHandler";
 import { store } from "@/store";
-import { useState } from "react";
 import { Provider } from "react-redux";
 
 export default function Home() {

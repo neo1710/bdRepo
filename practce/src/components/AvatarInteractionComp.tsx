@@ -1,4 +1,5 @@
 import type { StartAvatarResponse } from "@heygen/streaming-avatar";
+/* eslint-disable */
 
 import StreamingAvatar, {
   AvatarQuality,

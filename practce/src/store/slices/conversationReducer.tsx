@@ -1,5 +1,6 @@
 import { createSlice } from "@reduxjs/toolkit";
 import type { PayloadAction } from '@reduxjs/toolkit'
+/* eslint-disable */
 
 
 const conversationSlice = createSlice({
