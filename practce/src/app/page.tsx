@@ -10,7 +10,7 @@ export default function Home() {
   return (<div className="w-full">
     <Provider store={store}>
       <Nav />
-      <div className="font-[family-name:var(--font-geist-sans)] flex w-full">
+      <div className="font-[family-name:var(--font-geist-sans)] flex w-[90%] m-auto">
         <CameraComponent />
         <InteractiveAvatar />
       </div>

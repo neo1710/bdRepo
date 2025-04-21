@@ -96,12 +96,12 @@ const CameraComponent = () => {
   };
 
   return (
-    <div className="w-[50%] h-[500px] flex flex-col items-center justify-center bg-gray-200 border border-left-1 border-black shadow-lg relative p-2">
+    <div className="w-[50%] h-[500px] flex flex-col items-center justify-center bg-gray-600 border border-left-1 border-black shadow-lg relative p-2">
       <video ref={videoRef} autoPlay playsInline style={{ width: "450px", height: "450px", display: isCameraActive ? "block" : "none" }} />
       <canvas ref={canvasRef} style={{ display: "none" }} />
-      <div className="flex flex-col items-center justify-center h-full">
-        <p>Expression: {expression}</p>
-        <Button onPress={toggleCamera} className="p-2 bg-green-500 text-white rounded hover:bg-green-700">
+      <div className="flex items-center justify-center h-full">
+        <p className="p-1.5 border border-gray-300 text-white">Expression: {expression}</p>
+        <Button onPress={toggleCamera} className="p-2 bg-blue-500 text-white rounded hover:bg-blue-700">
           {isCameraActive ? "Stop Camera" : "Start Camera"}
         </Button>
       </div>

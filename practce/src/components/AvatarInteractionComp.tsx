@@ -207,7 +207,7 @@ export default function InteractiveAvatar() {
   }, [mediaStream, stream]);
 
   return (
-    <div className="w-[50%] h-[500px] flex flex-col gap-4 p-2 bg-gray-200 border border-left-1 border-black">
+    <div className="w-[50%] h-[500px] flex flex-col gap-4 p-2 bg-gray-600 border border-left-1 border-black">
       <Card>
         {stream ? (
           <div className="w-full h-[400px] w-[400px] justify-center items-center flex rounded-lg overflow-hidden">
@@ -243,7 +243,7 @@ export default function InteractiveAvatar() {
         ) : !isLoadingSession ? (
           <div className="w-full h-[500px] justify-center items-center flex flex-col gap-8 self-center">
             <Button
-              className="p-2 bg-green-500 text-white rounded hover:bg-green-700"
+              className="p-2 bg-blue-500 text-white rounded hover:bg-blue-700"
               size="md"
               onPress={startSession}
             >
@@ -256,15 +256,7 @@ export default function InteractiveAvatar() {
         )}
         {chatMode === "text_mode" ? (
           <div className="flex relative">
-            <InteractiveAvatarTextInput
-              disabled={!stream}
-              input={text}
-              label="Chat"
-              loading={isLoadingRepeat}
-              placeholder="Type something for the avatar to respond"
-              setInput={setText}
-              onSubmit={handleSpeak}
-            />
+            
             {text && (
               <div className="absolute right-16 top-3">Listening</div>
             )}

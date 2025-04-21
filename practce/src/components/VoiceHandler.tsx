@@ -107,11 +107,11 @@ export const VoiceHandler = () => {
         }
     };
     console.log(messagesHistory, "messagesHistory")
-    return <div className="w-full flex flex-col justify-center items-center h-1/2">
-        <p className="p-2 bg-black text-white">
+    return <div className="w-full flex justify-center items-center h-1/2 p-5">
+        <p className="p-2 text-white">
             {transcript}
         </p>
-        <button className="text-white" onClick={mistralResponse}> send </button>
+        <Button className="p-1 text-white border border-gray-300" onPress={mistralResponse}> Send </Button>
         <p className="p-2 bg-black text-white">
             {spokenContent}
         </p>
