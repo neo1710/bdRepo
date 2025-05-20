@@ -98,7 +98,7 @@ export default function InteractiveAvatar() {
     try {
       const res = await avatar.current.createStartAvatar({
         quality: AvatarQuality.Low,
-        avatarName: avatarId,
+        avatarName: "Katya_Chair_Sitting_public",
         knowledgeId: knowledgeId, // Or use a custom `knowledgeBase`.
         voice: {
           rate: 1.5, // 0.5 ~ 1.5
@@ -210,29 +210,29 @@ export default function InteractiveAvatar() {
     <div className="w-[50%] h-[500px] flex flex-col gap-4 p-2 bg-gray-600 border border-left-1 border-black">
       <Card>
         {stream ? (
-          <div className="w-full h-[400px] w-[400px] justify-center items-center flex rounded-lg overflow-hidden">
+          <div className="w-full h-[500px] w-[400px] rounded-lg overflow-hidden">
             <video
               ref={mediaStream}
               autoPlay
               playsInline
               style={{
                 width: "100%",
-                height: "100%",
+                height: "90%",
                 objectFit: "contain",
               }}
             >
               <track kind="captions" />
             </video>
-            <div className="flex gap-2 bottom-3 right-3 w-full">
+            <div className="flex gap-2 justify-around w-full mt-2">
               <Button
-                className="p-2 bg-green-500 text-white rounded-lg rounded hover:bg-green-700"
+                className="p-2 bg-blue-500 text-white rounded-lg rounded hover:bg-blue-700"
                 size="md"
                 onPress={handleInterrupt}
               >
                 Interrupt task
               </Button>
               <Button
-                className="p-2 bg-green-500 text-white rounded-lg rounded hover:bg-green-700"
+                className="p-2 bg-blue-500 hover:bg-blue-700 text-white rounded-lg rounded"
                 size="md"
                 onPress={endSession}
               >

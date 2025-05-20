@@ -7,7 +7,7 @@ export async function POST(request: Request) {
     // Parse the incoming request body to get the user's message
     const requestData = await request.json();
     const userMessage = requestData.message || "Hello"; // Default message if none provided
-
+console.log("User message:", userMessage);
     const requestBody = {
       model: "mistral-small-latest",
       messages: [
@@ -24,8 +24,12 @@ export async function POST(request: Request) {
     };
 
     if (!apiKey) {
+      console.error("API key is missing from environment variables");
       throw new Error("API key is missing from environment variables");
     }
+
+    // Debugging: Log the API key (only for local debugging, remove in production)
+    console.log("Using API Key:", apiKey);
 
     // If stream is true, we need to handle the response differently
     if (requestBody.stream) {
@@ -33,10 +37,17 @@ export async function POST(request: Request) {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${apiKey}`
+          'Authorization': `Bearer ${apiKey}` // Ensure this is correctly set
         },
         body: JSON.stringify(requestBody)
       });
+
+      // Debugging: Log response status for 401 errors
+      if (response.status === 401) {
+        console.error("Unauthorized: Check API key or permissions");
+        const errorDetails = await response.text();
+        console.error("Response body:", errorDetails);
+      }
 
       // Simply forward the streaming response to the client
       return new Response(response.body, {
@@ -52,10 +63,17 @@ export async function POST(request: Request) {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${apiKey}`
+          'Authorization': `Bearer ${apiKey}` // Ensure this is correctly set
         },
         body: JSON.stringify(requestBody)
       });
+
+      // Debugging: Log response status for 401 errors
+      if (response.status === 401) {
+        console.error("Unauthorized: Check API key or permissions");
+        const errorDetails = await response.text();
+        console.error("Response body:", errorDetails);
+      }
 
       if (!response.ok) {
         const errorData = await response.json();
