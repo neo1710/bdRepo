@@ -7,7 +7,6 @@ export async function POST(request: Request) {
     // Parse the incoming request body to get the user's message
     const requestData = await request.json();
     const userMessage = requestData.message || "Hello"; // Default message if none provided
-console.log("User message:", userMessage);
     const requestBody = {
       model: "mistral-small-latest",
       messages: [
@@ -49,8 +48,11 @@ console.log("User message:", userMessage);
         console.error("Response body:", errorDetails);
       }
 
+      // Clone the response to avoid locking the body
+      const clonedResponse = response.clone();
+
       // Simply forward the streaming response to the client
-      return new Response(response.body, {
+      return new Response(clonedResponse.body, {
         headers: {
           'Content-Type': 'text/event-stream',
           'Cache-Control': 'no-cache',
@@ -84,7 +86,10 @@ console.log("User message:", userMessage);
         });
       }
 
-      const data = await response.json();
+      // Clone the response to avoid locking the body
+      const clonedResponse = response.clone();
+      const data = await clonedResponse.json();
+
       return new Response(JSON.stringify(data), {
         status: 200,
         headers: { 'Content-Type': 'application/json' }
