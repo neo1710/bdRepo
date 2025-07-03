@@ -1,5 +1,5 @@
 import React, { useState, useRef } from 'react';
-import { MessageCircle, X, User, Bot, Menu, Copy, Check } from 'lucide-react';
+import { MessageCircle, X, User, Bot } from 'lucide-react';
 import { useDispatch, useSelector } from "react-redux";
 import { addMessage, updateMessage } from "@/store/slices/conversationReducer";
 import { Button } from "@nextui-org/react";

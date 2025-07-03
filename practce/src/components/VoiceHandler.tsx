@@ -2,7 +2,7 @@ import { addMessage, updateMessage } from "@/store/slices/conversationReducer";
 import { Button } from "@nextui-org/react"
 import { useEffect, useState } from "react";
 import { FaMicrophone, FaMicrophoneSlash, FaVolumeUp, FaWaveSquare } from "react-icons/fa";
-import { useDispatch, useSelector } from "react-redux";
+import { useDispatch } from "react-redux";
 import SpeechRecognition, { useSpeechRecognition } from 'react-speech-recognition';
 /* eslint-disable */
 
