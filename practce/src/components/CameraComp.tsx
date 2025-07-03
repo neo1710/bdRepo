@@ -82,6 +82,7 @@ const CameraComponent = ({ autoStart = false }: { autoStart?: boolean }) => {
       setIsCameraActive(true);
     } catch (error) {
       // handle error
+      console.error("Error accessing camera:", error);
     }
   };
 
