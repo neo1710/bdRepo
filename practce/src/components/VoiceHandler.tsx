@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { FaMicrophone, FaMicrophoneSlash, FaVolumeUp, FaWaveSquare } from "react-icons/fa";
 import { useDispatch, useSelector } from "react-redux";
 import SpeechRecognition, { useSpeechRecognition } from 'react-speech-recognition';
+/* eslint-disable */
 
 export const VoiceHandler = () => {
     const [spokenContent, setSpokenContent] = useState("")
@@ -11,8 +12,7 @@ export const VoiceHandler = () => {
     const [isSpeechComplete, setIsSpeechComplete] = useState(true);
     const [pendingSpokenText, setPendingSpokenText] = useState<string>("");
     const [isProcessing, setIsProcessing] = useState(false);
-    const dispatch = useDispatch()
-    const { messagesHistory } = useSelector((state: any) => state.conversation)
+    const dispatch = useDispatch();
 
     const {
         transcript,

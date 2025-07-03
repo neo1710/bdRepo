@@ -4,8 +4,8 @@ import { useDispatch, useSelector } from "react-redux";
 import { addMessage, updateMessage } from "@/store/slices/conversationReducer";
 import { Button } from "@nextui-org/react";
 import MessageBubble from './CustomMarkdown';
-
 /* eslint-disable */
+
 const ConversationHistoryDrawer = () => {
   const [isOpen, setIsOpen] = useState(false);
   const [copiedMessageId, setCopiedMessageId] = useState<string>("");
@@ -15,22 +15,6 @@ const ConversationHistoryDrawer = () => {
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const dispatch = useDispatch();
   const { messagesHistory } = useSelector((state: any) => state.conversation)
-
-  // Single conversation with messages based on your structure
-  const conversation = {
-    id: '1751343736934',
-    title: 'Current Chat',
-    messages: [
-      { id: '1751343736934', role: 'user', content: 'hey' },
-      { id: '1751343925477', role: 'AI', content: "Hey! 😊 How's it going? What's up?" },
-      { id: '1751343925478', role: 'user', content: 'I need help with creating a conversation drawer component' },
-      { id: '1751343925479', role: 'AI', content: "I'd be happy to help you create a conversation drawer component! What specific features would you like it to have? For example, do you want it to slide in from the side, show message history, have search functionality, or any particular styling?" },
-      { id: '1751343925480', role: 'user', content: 'Yes, make it like WhatsApp with message bubbles and copy functionality' },
-      { id: '1751343925481', role: 'AI', content: "Perfect! I'll create a WhatsApp-style conversation drawer with message bubbles and copy functionality. The user messages will appear on the right with a different color, AI messages on the left, and each message will have a copy button that appears on hover." },
-      { id: '1751343925482', role: 'user', content: 'That sounds great!' },
-      { id: '1751343925483', role: 'AI', content: "Awesome! Let me build that for you right now. It'll have smooth animations, proper message grouping, timestamps, and a clean WhatsApp-inspired design." }
-    ]
-  };
 
   const copyToClipboard = async (text: string, messageId: string) => {
     try {
