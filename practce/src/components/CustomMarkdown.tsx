@@ -5,7 +5,6 @@ import remarkGfm from 'remark-gfm';
 import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter';
 import { vscDarkPlus } from 'react-syntax-highlighter/dist/esm/styles/prism';
 import type { Components } from 'react-markdown';
-import type { PrismProps } from 'react-syntax-highlighter';
 // Add icons for copy/check
 import { Copy, Check } from 'lucide-react';
 
@@ -48,7 +47,7 @@ const MessageBubble: React.FC<MessageBubbleProps> = ({ message, isAI, onCopy, co
                 style={vscDarkPlus}
                 language={match[1]}
                 PreTag="div"
-                {...props as PrismProps}
+                {...props}
               >
                 {String(children).replace(/\n$/, '')}
               </SyntaxHighlighter>
@@ -67,7 +66,7 @@ const MessageBubble: React.FC<MessageBubbleProps> = ({ message, isAI, onCopy, co
           h3: ({ children }) => <h3 className="text-lg font-medium mb-2">{children}</h3>,
           a: ({ href, children }) => (
             <a
-              href={href}
+              href={href as string}
               className="text-blue-400 hover:underline"
               target="_blank"
               rel="noopener noreferrer"
