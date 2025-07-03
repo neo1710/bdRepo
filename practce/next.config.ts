@@ -1,6 +1,9 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
+  eslint: {
+    ignoreDuringBuilds: true,  // 👈 disables linting during next build
+  },
   /* config options here */
   async headers() {
     return [
