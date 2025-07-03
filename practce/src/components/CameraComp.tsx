@@ -6,7 +6,7 @@ import { Button } from "@nextui-org/react";
 
 const MODEL_URL = "https://cdn.jsdelivr.net/npm/@vladmandic/face-api/model/";
 
-const CameraComponent = () => {
+const CameraComponent = ({ autoStart = false }: { autoStart?: boolean }) => {
   const videoRef = useRef<HTMLVideoElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const [expression, setExpression] = useState<string>("");
@@ -16,15 +16,23 @@ const CameraComponent = () => {
   useEffect(() => {
     const loadModels = async () => {
       await faceapi.nets.tinyFaceDetector.loadFromUri(MODEL_URL);
-      console.log("TinyFaceDetector model loaded");
       await faceapi.nets.faceLandmark68Net.loadFromUri(MODEL_URL);
-      console.log("FaceLandmark68Net model loaded");
       await faceapi.nets.faceExpressionNet.loadFromUri(MODEL_URL);
-      console.log("FaceExpressionNet model loaded");
     };
 
     loadModels();
   }, []);
+
+  useEffect(() => {
+    if (autoStart && !isCameraActive) {
+      startCamera();
+    }
+    // If autoStart is false and camera is active, stop the camera
+    if (!autoStart && isCameraActive) {
+      stopCamera();
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [autoStart]);
 
   useEffect(() => {
     let interval: NodeJS.Timeout;
@@ -56,22 +64,24 @@ const CameraComponent = () => {
     };
   }, [isCameraActive]);
 
+  // Cleanup camera stream on unmount
+  useEffect(() => {
+    return () => {
+      stopCamera();
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
   const startCamera = async () => {
     try {
       const userStream = await navigator.mediaDevices.getUserMedia({ video: {} });
       setStream(userStream);
       if (videoRef.current) {
         videoRef.current.srcObject = userStream;
-        videoRef.current.onloadedmetadata = () => {
-          console.log("Video metadata loaded");
-        };
-        videoRef.current.onerror = (error) => {
-          console.error("Video error:", error);
-        };
       }
       setIsCameraActive(true);
     } catch (error) {
-      console.error("Error accessing webcam:", error);
+      // handle error
     }
   };
 
@@ -83,7 +93,6 @@ const CameraComponent = () => {
         videoRef.current.srcObject = null;
       }
       setIsCameraActive(false);
-      console.log("Webcam stream stopped");
     }
   };
 
@@ -96,12 +105,32 @@ const CameraComponent = () => {
   };
 
   return (
-    <div className="w-[50%] h-[500px] flex flex-col items-center justify-center bg-gray-600 border border-left-1 border-black shadow-lg relative p-2">
-      <video ref={videoRef} autoPlay playsInline style={{ width: "450px", height: "450px", display: isCameraActive ? "block" : "none" }} />
-      <canvas ref={canvasRef} style={{ display: "none" }} />
-      <div className="flex items-center justify-center h-full">
-        <p className="p-1.5 border border-gray-300 text-white">Expression: {expression}</p>
-        <Button onPress={toggleCamera} className="p-2 bg-blue-500 text-white rounded hover:bg-blue-700">
+    <div className="w-full max-w-md min-w-[320px] h-auto flex flex-col items-center justify-between bg-gradient-to-br from-gray-700 via-gray-800 to-gray-900 border border-gray-700 rounded-2xl shadow-2xl p-6 md:p-8 transition-all duration-300">
+      <div className="relative w-full flex justify-center">
+        <video
+          ref={videoRef}
+          autoPlay
+          playsInline
+          className={`rounded-xl border-2 border-gray-600 shadow-lg transition-all duration-300 ${isCameraActive ? "block" : "hidden"
+            }`}
+          style={{ width: "100%", height: "320px", background: "#222" }}
+        />
+        <canvas ref={canvasRef} style={{ display: "none" }} />
+        {!isCameraActive && (
+          <div className="absolute top-0 left-0 w-full h-full flex items-center justify-center text-gray-400 text-lg font-semibold">
+            Camera is off
+          </div>
+        )}
+      </div>
+      <div className="flex flex-col items-center w-full mt-4 gap-3">
+        <div className="px-4 py-2 bg-gray-900/80 rounded-lg border border-gray-600 text-blue-300 font-medium shadow text-center w-full">
+          Expression:{" "}
+          <span className="font-bold text-white">{expression || "N/A"}</span>
+        </div>
+        <Button
+          onPress={toggleCamera}
+          className="w-full py-2 bg-gradient-to-r from-blue-500 to-purple-600 text-white font-semibold rounded-lg shadow hover:scale-105 transition"
+        >
           {isCameraActive ? "Stop Camera" : "Start Camera"}
         </Button>
       </div>
@@ -110,3 +139,6 @@ const CameraComponent = () => {
 };
 
 export default CameraComponent;
+
+
+

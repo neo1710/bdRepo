@@ -1,18 +1,16 @@
 import { addMessage, updateMessage } from "@/store/slices/conversationReducer";
 import { Button } from "@nextui-org/react"
-import { useEffect, useState, useRef } from "react";
-import { FaMicrophone, FaMicrophoneSlash } from "react-icons/fa6";
-import { } from "react-icons/fa6";
+import { useEffect, useState } from "react";
+import { FaMicrophone, FaMicrophoneSlash, FaVolumeUp, FaWaveSquare } from "react-icons/fa";
 import { useDispatch, useSelector } from "react-redux";
 import SpeechRecognition, { useSpeechRecognition } from 'react-speech-recognition';
-/* eslint-disable */
 
 export const VoiceHandler = () => {
     const [spokenContent, setSpokenContent] = useState("")
     const [microphoneHandle, setMicrophoneHandle] = useState<boolean>(false)
-    const [text, setText] = useState<string>("");
     const [isSpeechComplete, setIsSpeechComplete] = useState(true);
-    const textareaRef = useRef<HTMLTextAreaElement>(null);
+    const [pendingSpokenText, setPendingSpokenText] = useState<string>("");
+    const [isProcessing, setIsProcessing] = useState(false);
     const dispatch = useDispatch()
     const { messagesHistory } = useSelector((state: any) => state.conversation)
 
@@ -23,14 +21,12 @@ export const VoiceHandler = () => {
         browserSupportsSpeechRecognition,
     } = useSpeechRecognition();
 
-    // Update text when speech recognition stops
+    // When speech recognition stops and transcript is available, auto-send the message
     useEffect(() => {
-        if (!listening && transcript && isSpeechComplete) {
-            setText(prev => {
-                const updatedText = prev.trim() ? `${prev.trim()} ${transcript}` : transcript;
-                return updatedText;
-            });
-            resetTranscript();
+        if (!listening && transcript && isSpeechComplete && microphoneHandle) {
+            setPendingSpokenText(""); // Clear the pending text after sending
+            handleSend(transcript);
+            setMicrophoneHandle(false);
         }
     }, [listening, transcript, isSpeechComplete]);
 
@@ -47,31 +43,36 @@ export const VoiceHandler = () => {
         }
     }, [listening]);
 
-    const onButtonPress = () => {
+    // Show spoken text while listening
+    useEffect(() => {
+        if (listening) {
+            setPendingSpokenText(transcript);
+        }
+    }, [transcript, listening]);
+
+    const onMicButtonPress = () => {
         if (microphoneHandle) {
             SpeechRecognition.stopListening();
+            setMicrophoneHandle(false);
         } else {
-            SpeechRecognition.startListening({ continuous: true });
-        }
-        setMicrophoneHandle(!microphoneHandle);
-
-        // Focus on textarea when activating mic
-        if (textareaRef.current) {
-            textareaRef.current.focus();
+            SpeechRecognition.startListening({ continuous: false });
+            setMicrophoneHandle(true);
         }
     }
 
-    const handleSend = async () => {
+    // Accepts optional override for message (for voice input)
+    const handleSend = async (overrideMessage?: string) => {
         // Stop listening if active
         if (microphoneHandle) {
             SpeechRecognition.stopListening();
             setMicrophoneHandle(false);
         }
 
-        // Get the final text to send (combine textarea content and any pending transcript)
-        const messageToSend = text.trim() || transcript;
+        const messageToSend = overrideMessage?.trim();
 
         if (!messageToSend) return; // Don't send empty messages
+
+        setIsProcessing(true);
 
         // Add user message to your state
         dispatch(addMessage({ role: "user", content: messageToSend }));
@@ -84,7 +85,6 @@ export const VoiceHandler = () => {
             dispatch(addMessage({ id: messageId, role: "AI", content: "" }));
 
             // Reset the input field
-            setText("");
             resetTranscript();
 
             // Make the request with streaming enabled
@@ -149,52 +149,145 @@ export const VoiceHandler = () => {
         } catch (error) {
             console.error("Error with streaming response:", error);
             dispatch(addMessage({ role: "AI", content: "Sorry, I encountered an error while generating a response." }));
+        } finally {
+            setIsProcessing(false);
         }
     };
 
-    console.log(messagesHistory, "messagesHistory")
-
-    return (
-        <div className="w-[100%] flex justify-center items-center">
-            <div className="w-[80%] rounded-lg shadow-lg p-4">
-                <div className="flex items-center justify-around mb-4">
-                    <div className="mb-4 w-[85%] relative">
-                        <textarea
-                            ref={textareaRef}
-                            className="w-full p-2 pl-12 text-gray-300 bg-gray-700 rounded-md mt-2 resize-none focus:outline-none focus:ring-2 focus:ring-blue-500"
-                            rows={2}
-                            value={listening ? `${text}${text ? ' ' : ''}${transcript}` : text}
-                            onChange={(e) => setText(e.target.value)}
-                            placeholder="Start speaking or type here..."
-                        />
-                        <div className="absolute left-2 top-1/2 transform -translate-y-1/2">
-                            <Button
-                                className={`p-2 rounded-full text-white flex items-center justify-around ${microphoneHandle
-                                        ? "bg-red-500 hover:bg-red-600"
-                                        : "bg-blue-500 hover:bg-blue-600"
-                                    }`}
-                                onPress={onButtonPress}
-                            >
-                                {microphoneHandle ? <FaMicrophoneSlash size={16} /> : <FaMicrophone size={16} />}
-                            </Button>
-                        </div>
-                    </div>
-                    <div className="mb-4 w-[10%]">
-                        <Button
-                            className="w-[100%] p-4 text-white bg-blue-500 hover:bg-blue-600 rounded-md"
-                            onPress={handleSend}
-                        >
-                            Send
-                        </Button>
+    if (!browserSupportsSpeechRecognition) {
+        return (
+            <div className="w-full flex justify-center items-center min-h-[400px]">
+                <div className="bg-gradient-to-br from-gray-800 to-gray-900 border border-gray-700 rounded-2xl p-8 shadow-2xl">
+                    <div className="text-center">
+                        <div className="text-red-400 text-6xl mb-4">⚠️</div>
+                        <h3 className="text-xl font-semibold text-white mb-2">Speech Recognition Not Supported</h3>
+                        <p className="text-gray-400">Your browser doesn't support speech recognition. Please use a modern browser like Chrome or Firefox.</p>
                     </div>
                 </div>
-                <div className="mb-4">
-                    <p className="p-2 text-white text-lg font-semibold border-b border-gray-700">
-                        AI Response:
-                    </p>
-                    <p className="p-2 text-gray-300 bg-gray-700 rounded-md mt-2">
-                        {spokenContent || "AI response will appear here..."}
-                    </p>
+            </div>
+        );
+    }
+
+    return (
+        <div className="w-full flex justify-center items-center p-6">
+            <div className="w-full max-w-4xl">
+                {/* Main Voice Interface Card */}
+                <div className="bg-gradient-to-br from-gray-800 via-gray-900 to-black border border-gray-700 rounded-3xl p-8 shadow-2xl backdrop-blur-lg">
+
+                    {/* Header */}
+                    <div className="text-center mb-8">
+                        <div className="flex items-center justify-center mb-3">
+                            <FaWaveSquare className="text-blue-400 text-2xl mr-3" />
+                            <h2 className="text-3xl font-bold bg-gradient-to-r from-blue-400 to-purple-400 bg-clip-text text-transparent">
+                                AI Voice Assistant
+                            </h2>
+                        </div>
+                        <p className="text-gray-400 text-sm">Press the microphone to start speaking</p>
+                    </div>
+
+                    {/* Voice Control Section */}
+                    <div className="flex flex-col items-center justify-center mb-8">
+                        <div className="relative mb-6">
+                            {/* Pulse Animation Ring */}
+                            {listening && (
+                                <div className="absolute inset-0 rounded-full border-4 border-green-400 animate-ping opacity-75"></div>
+                            )}
+                            {listening && (
+                                <div className="absolute inset-0 rounded-full border-2 border-green-400 animate-pulse"></div>
+                            )}
+
+                            {/* Microphone Button */}
+                            <Button
+                                className={`relative p-8 rounded-full text-white flex items-center justify-center transition-all duration-300 transform hover:scale-105 ${microphoneHandle
+                                        ? "bg-gradient-to-r from-red-500 to-red-600 hover:from-red-600 hover:to-red-700 shadow-lg shadow-red-500/25"
+                                        : "bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 shadow-lg shadow-blue-500/25"
+                                    }`}
+                                onPress={onMicButtonPress}
+                                disabled={isProcessing}
+                            >
+                                {microphoneHandle ? <FaMicrophoneSlash size={36} /> : <FaMicrophone size={36} />}
+                            </Button>
+                        </div>
+
+                        {/* Status Indicator */}
+                        <div className="text-center min-h-[60px] flex flex-col items-center justify-center">
+                            {listening && (
+                                <div className="flex flex-col items-center animate-fade-in">
+                                    <div className="flex items-center mb-3">
+                                        <div className="flex space-x-1 mr-3">
+                                            <div className="w-2 h-2 bg-green-400 rounded-full animate-bounce"></div>
+                                            <div className="w-2 h-2 bg-green-400 rounded-full animate-bounce" style={{ animationDelay: '0.1s' }}></div>
+                                            <div className="w-2 h-2 bg-green-400 rounded-full animate-bounce" style={{ animationDelay: '0.2s' }}></div>
+                                        </div>
+                                        <span className="text-green-400 text-lg font-semibold">Listening...</span>
+                                    </div>
+                                </div>
+                            )}
+                            {isProcessing && (
+                                <div className="flex items-center">
+                                    <div className="animate-spin rounded-full h-4 w-4 border-2 border-blue-400 border-t-transparent mr-3"></div>
+                                    <span className="text-blue-400 text-lg font-semibold">Processing...</span>
+                                </div>
+                            )}
+                            {!listening && !isProcessing && (
+                                <span className="text-gray-500 text-base">Ready to listen</span>
+                            )}
+                        </div>
+                    </div>
+
+                    {/* Speech Input Display */}
+                    {listening && (
+                        <div className="mb-8 animate-fade-in">
+                            <div className="bg-gradient-to-r from-gray-700 to-gray-800 border border-gray-600 rounded-2xl p-6 shadow-lg">
+                                <div className="flex items-center mb-3">
+                                    <FaMicrophone className="text-green-400 text-lg mr-2" />
+                                    <span className="text-green-400 font-semibold">Your Speech</span>
+                                </div>
+                                <div className="bg-gray-900 rounded-lg p-4 min-h-[60px] flex items-center">
+                                    <p className="text-white text-lg leading-relaxed">
+                                        {pendingSpokenText || (
+                                            <span className="text-gray-500 italic">Start speaking...</span>
+                                        )}
+                                        {pendingSpokenText && (
+                                            <span className="inline-block w-2 h-6 bg-green-400 ml-1 animate-pulse"></span>
+                                        )}
+                                    </p>
+                                </div>
+                            </div>
+                        </div>
+                    )}
+
+                    {/* AI Response Section */}
+                    <div className="bg-gradient-to-r from-gray-700 to-gray-800 border border-gray-600 rounded-2xl p-6 shadow-lg">
+                        <div className="flex items-center mb-4">
+                            <FaVolumeUp className="text-blue-400 text-lg mr-2" />
+                            <span className="text-blue-400 font-semibold text-lg">AI Response</span>
+                            {isProcessing && (
+                                <div className="ml-3 flex space-x-1">
+                                    <div className="w-1 h-1 bg-blue-400 rounded-full animate-bounce"></div>
+                                    <div className="w-1 h-1 bg-blue-400 rounded-full animate-bounce" style={{ animationDelay: '0.1s' }}></div>
+                                    <div className="w-1 h-1 bg-blue-400 rounded-full animate-bounce" style={{ animationDelay: '0.2s' }}></div>
+                                </div>
+                            )}
+                        </div>
+                        <div className="bg-gray-900 rounded-lg p-6 min-h-[120px] flex items-start">
+                            <p className="text-gray-300 text-base leading-relaxed whitespace-pre-wrap">
+                                {spokenContent || (
+                                    <span className="text-gray-500 italic">AI response will appear here...</span>
+                                )}
+                                {isProcessing && spokenContent && (
+                                    <span className="inline-block w-2 h-5 bg-blue-400 ml-1 animate-pulse"></span>
+                                )}
+                            </p>
+                        </div>
+                    </div>
+
+                    {/* Footer Instructions */}
+                    <div className="mt-6 text-center">
+                        <p className="text-gray-500 text-sm">
+                            💡 Tip: Speak clearly and wait for the response. The AI will automatically process your speech when you stop talking.
+                        </p>
+                    </div>
                 </div>
             </div>
         </div>

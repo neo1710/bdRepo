@@ -22,7 +22,7 @@ import { AVATARS, STT_LANGUAGE_LIST } from "../app/lib/contants";
 import InteractiveAvatarTextInput from "./InteractiveAvatarTextInput";
 import { useSelector } from "react-redux";
 
-export default function InteractiveAvatar() {
+export default function InteractiveAvatar({ autoStart = false }: { autoStart?: boolean }) {
   const [isLoadingSession, setIsLoadingSession] = useState(false);
   const [isLoadingRepeat, setIsLoadingRepeat] = useState(false);
   const [stream, setStream] = useState<MediaStream>();
@@ -43,6 +43,13 @@ export default function InteractiveAvatar() {
   useEffect(() => {
     handleSpeak();
   }, [messagesHistory])
+
+  useEffect(() => {
+    if (autoStart) {
+      startSession();
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [autoStart]);
 
   function baseApiUrl() {
     return process.env.NEXT_PUBLIC_BASE_API_URL;
@@ -207,67 +214,69 @@ export default function InteractiveAvatar() {
   }, [mediaStream, stream]);
 
   return (
-    <div className="w-[50%] h-[500px] flex flex-col gap-4 p-2 bg-gray-600 border border-left-1 border-black">
-      <Card>
+    <div className="w-full max-w-md min-w-[320px] h-auto flex flex-col gap-4 p-6 md:p-8 bg-gradient-to-br from-gray-700 via-gray-800 to-gray-900 border border-gray-700 rounded-2xl shadow-2xl transition-all duration-300">
+      <Card className="bg-gray-900/80 rounded-xl shadow-lg p-2 flex-1 flex flex-col justify-between">
         {stream ? (
-          <div className="w-full h-[500px] w-[400px] rounded-lg overflow-hidden">
+          <div className="w-full h-[320px] rounded-lg overflow-hidden flex flex-col items-center">
             <video
               ref={mediaStream}
               autoPlay
               playsInline
+              className="rounded-lg border-2 border-gray-600 shadow"
               style={{
                 width: "100%",
                 height: "90%",
                 objectFit: "contain",
+                background: "#222"
               }}
             >
               <track kind="captions" />
             </video>
             <div className="flex gap-2 justify-around w-full mt-2">
               <Button
-                className="p-2 bg-blue-500 text-white rounded-lg rounded hover:bg-blue-700"
+                className="p-2 bg-blue-500 text-white rounded-lg hover:bg-blue-700"
                 size="md"
                 onPress={handleInterrupt}
               >
-                Interrupt task
+                Interrupt
               </Button>
               <Button
-                className="p-2 bg-blue-500 hover:bg-blue-700 text-white rounded-lg rounded"
+                className="p-2 bg-red-500 hover:bg-red-700 text-white rounded-lg"
                 size="md"
                 onPress={endSession}
               >
-                End session
+                End Session
               </Button>
             </div>
           </div>
         ) : !isLoadingSession ? (
-          <div className="w-full h-[500px] justify-center items-center flex flex-col gap-8 self-center">
+          <div className="w-full h-[320px] flex flex-col justify-center items-center gap-8 self-center">
             <Button
-              className="p-2 bg-blue-500 text-white rounded hover:bg-blue-700"
+              className="p-2 px-8 bg-gradient-to-r from-blue-500 to-purple-600 text-white rounded-lg font-bold shadow hover:scale-105 transition"
               size="md"
               onPress={startSession}
             >
-              Start session
+              Start Avatar Session
             </Button>
-
           </div>
         ) : (
-          <Spinner color="default" size="lg" />
+          <div className="flex items-center justify-center h-[320px]">
+            <Spinner color="default" size="lg" />
+          </div>
         )}
         {chatMode === "text_mode" ? (
-          <div className="flex relative">
-            
+          <div className="flex relative mt-2">
             {text && (
-              <div className="absolute right-16 top-3">Listening</div>
+              <div className="absolute right-4 top-2 text-green-400 font-semibold animate-pulse">Listening...</div>
             )}
           </div>
         ) : (
-          <div className="w-full text-center">
+          <div className="w-full text-center mt-2">
             <Button
               className="p-2 bg-green-500 text-white rounded hover:bg-green-700"
               size="md"
             >
-              {isUserTalking ? "Listening" : "Voice chat"}
+              {isUserTalking ? "Listening" : "Voice Chat"}
             </Button>
           </div>
         )}
