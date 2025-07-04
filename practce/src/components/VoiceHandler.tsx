@@ -1,7 +1,7 @@
 import { addMessage, updateMessage } from "@/store/slices/conversationReducer";
 import { Button } from "@nextui-org/react"
 import { useEffect, useState } from "react";
-import { FaMicrophone, FaMicrophoneSlash, FaVolumeUp, FaWaveSquare } from "react-icons/fa";
+import { FaMicrophone, FaMicrophoneSlash, FaVolumeUp, FaWaveSquare, FaRegPlayCircle } from "react-icons/fa";
 import { useDispatch } from "react-redux";
 import SpeechRecognition, { useSpeechRecognition } from 'react-speech-recognition';
 import MessageBubble from './CustomMarkdown';
@@ -155,6 +155,18 @@ export const VoiceHandler = () => {
         }
     };
 
+    // Speech Synthesis for AI response
+    const speakAIResponse = () => {
+        if (!spokenContent) return;
+        // Cancel any ongoing speech
+        window.speechSynthesis.cancel();
+        const utterance = new window.SpeechSynthesisUtterance(spokenContent);
+        utterance.lang = "en-US";
+        utterance.rate = 1;
+        utterance.pitch = 1;
+        window.speechSynthesis.speak(utterance);
+    };
+
     if (!browserSupportsSpeechRecognition) {
         return (
             <div className="w-full flex justify-center items-center min-h-[400px]">
@@ -173,7 +185,7 @@ export const VoiceHandler = () => {
         <div className="w-full flex justify-center items-center p-2 sm:p-4 md:p-6">
             <div className="w-full max-w-4xl">
                 {/* Main Voice Interface Card */}
-                <div className="bg-gradient-to-br from-gray-800 via-gray-900 to-black border border-gray-700 rounded-3xl p-4 sm:p-6 md:p-8 shadow-2xl backdrop-blur-lg">
+                <div className="rounded-3xl p-4 sm:p-6 md:p-8">
 
                     {/* Header */}
                     <div className="text-center mb-6 sm:mb-8">
@@ -263,6 +275,16 @@ export const VoiceHandler = () => {
                         <div className="flex items-center mb-3 sm:mb-4">
                             <FaVolumeUp className="text-blue-400 text-base sm:text-lg mr-1 sm:mr-2" />
                             <span className="text-blue-400 font-semibold text-base sm:text-lg">AI Response</span>
+                            {/* Speaker Button */}
+                            <button
+                                className="ml-3 sm:ml-4 p-1 rounded-full bg-blue-500 hover:bg-blue-600 transition-colors text-white flex items-center"
+                                title="Speak AI Response"
+                                onClick={speakAIResponse}
+                                disabled={!spokenContent}
+                                style={{ opacity: spokenContent ? 1 : 0.5 }}
+                            >
+                                <FaRegPlayCircle size={22} />
+                            </button>
                             {isProcessing && (
                                 <div className="ml-2 sm:ml-3 flex space-x-1">
                                     <div className="w-1 h-1 bg-blue-400 rounded-full animate-bounce"></div>
