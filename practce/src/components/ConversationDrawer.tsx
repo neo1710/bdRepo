@@ -1,5 +1,5 @@
-import React, { useState, useRef } from 'react';
-import { MessageCircle, X, User, Bot } from 'lucide-react';
+import React, { useState, useRef, useEffect } from 'react';
+import { MessageCircle, X, User, Bot, Trash2 } from 'lucide-react';
 import { useDispatch, useSelector } from "react-redux";
 import { addMessage, updateMessage } from "@/store/slices/conversationReducer";
 import { Button } from "@nextui-org/react";
@@ -12,7 +12,9 @@ const ConversationHistoryDrawer = () => {
   const [text, setText] = useState<string>("");
   const [sending, setSending] = useState(false);
   const [streamedContent, setStreamedContent] = useState<string>("");
+  const [clearing, setClearing] = useState(false);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
+  const messagesEndRef = useRef<HTMLDivElement>(null);
   const dispatch = useDispatch();
   const { messagesHistory } = useSelector((state: any) => state.conversation)
 
@@ -87,6 +89,30 @@ const ConversationHistoryDrawer = () => {
     setSending(false);
   };
 
+  const handleClearChat = () => {
+    setClearing(true);
+    setTimeout(() => {
+      dispatch({ type: "conversation/clearMessages" });
+      setStreamedContent("");
+      setCopiedMessageId("");
+      setClearing(false);
+    }, 600); // Animation duration
+  };
+
+  // Auto-scroll while streaming, stop when not streaming
+  useEffect(() => {
+    if (streamedContent) {
+      messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+    }
+  }, [streamedContent]);
+
+  // Also scroll to bottom when a new message is added (user or AI)
+  useEffect(() => {
+    if (!streamedContent && messagesEndRef.current) {
+      messagesEndRef.current.scrollIntoView({ behavior: "smooth" });
+    }
+  }, [messagesHistory.length]);
+
   // const formatTime = (messageId:string) => {
   //   // Generate a realistic time based on message order
   //   const baseTime = new Date('2025-07-01T10:30:00Z');
@@ -129,59 +155,83 @@ const ConversationHistoryDrawer = () => {
               <p className="text-xs text-green-100">{messagesHistory.length} messages</p>
             </div>
           </div>
-          <button
-            onClick={() => setIsOpen(false)}
-            className="p-2 hover:bg-green-700 rounded-full transition-colors duration-200"
-          >
-            <X size={18} />
-          </button>
+          <div className="flex items-center gap-2">
+            <button
+              onClick={handleClearChat}
+              className="p-2 hover:bg-red-600 rounded-full transition-colors duration-200"
+              title="Clear Chat"
+            >
+              <Trash2 size={18} />
+            </button>
+            <button
+              onClick={() => setIsOpen(false)}
+              className="p-2 hover:bg-green-700 rounded-full transition-colors duration-200"
+              title="Close"
+            >
+              <X size={18} />
+            </button>
+          </div>
         </div>
 
         {/* Messages Container */}
-        <div className="flex-1 overflow-y-auto p-2 sm:p-4 space-y-2 sm:space-y-3" style={{ height: 'calc(100vh - 180px)' }}>
-          {messagesHistory.map((message: any, index: number) => {
-            const isUser = message.role === 'user';
-            const isConsecutive = index > 0 && messagesHistory[index - 1].role === message.role;
-            const isLastAIStreaming = !isUser && index === messagesHistory.length - 1 && streamedContent;
-            return (
-              <div
-                key={message.id || index}
-                className={`flex w-full ${isUser ? 'justify-end' : 'justify-start'} ${isConsecutive ? 'mt-1' : 'mt-4'}`}
-              >
+        <div
+          className={`relative flex-1 overflow-y-auto p-2 sm:p-4 space-y-2 sm:space-y-3 transition-all duration-500 custom-scrollbar`}
+          style={{ height: 'calc(100vh - 180px)' }}
+        >
+          {/* Animated "clearing" message - absolutely centered */}
+          {clearing && (
+            <div className="absolute inset-0 flex flex-col items-center justify-center z-50 pointer-events-none">
+              <div className="w-12 h-12 mb-2 flex items-center justify-center">
+                <Trash2 size={36} className="text-red-400 animate-bounce" />
+              </div>
+              <span className="text-red-300 text-lg font-semibold animate-pulse">Clearing chat...</span>
+            </div>
+          )}
+          <div className={`transition-all duration-500 ${clearing ? "opacity-0 scale-95 blur-sm" : "opacity-100 scale-100 blur-0"}`}>
+            {messagesHistory.map((message: any, index: number) => {
+              const isUser = message.role === 'user';
+              const isConsecutive = index > 0 && messagesHistory[index - 1].role === message.role;
+              const isLastAIStreaming = !isUser && index === messagesHistory.length - 1 && streamedContent;
+              return (
                 <div
-                  className={`relative w-full max-w-full sm:max-w-xs md:max-w-sm lg:max-w-md flex ${isUser ? 'justify-end' : 'justify-start'}`}
-                  style={{ overflow: "visible" }}
+                  key={message.id || index}
+                  className={`flex w-full ${isUser ? 'justify-end' : 'justify-start'} ${isConsecutive ? 'mt-1' : 'mt-4'}`}
                 >
-                  {/* Message Bubble with icon in top corner */}
-                  <div className={`relative ${isUser ? 'ml-auto' : 'mr-auto'} max-w-[92vw] sm:max-w-[90%]`}>
-                    {/* Icon in top corner (not inside MessageBubble) */}
-                    {isUser ? (
-                      <div className="absolute -top-2 -right-2 sm:-top-3 sm:-right-3 z-10">
-                        <div className="w-5 h-5 sm:w-6 sm:h-6 bg-blue-500 text-white rounded-full flex items-center justify-center shadow-md border-2 border-white">
-                          <User size={12} className="sm:w-4 sm:h-4" />
+                  <div
+                    className={`relative w-full max-w-full sm:max-w-xs md:max-w-sm lg:max-w-md flex ${isUser ? 'justify-end' : 'justify-start'}`}
+                    style={{ overflow: "visible" }}
+                  >
+                    {/* Message Bubble with icon in top corner */}
+                    <div className={`relative ${isUser ? 'ml-auto' : 'mr-auto'} max-w-[92vw] sm:max-w-[90%]`}>
+                      {/* Icon in top corner (not inside MessageBubble) */}
+                      {isUser ? (
+                        <div className="absolute -top-2 -right-2 sm:-top-3 sm:-right-3 z-10">
+                          <div className="w-5 h-5 sm:w-6 sm:h-6 bg-blue-500 text-white rounded-full flex items-center justify-center shadow-md border-2 border-white">
+                            <User size={12} className="sm:w-4 sm:h-4" />
+                          </div>
                         </div>
-                      </div>
-                    ) : (
-                      <div className="absolute -top-2 -left-2 sm:-top-3 sm:-left-3 z-10">
-                        <div className="w-5 h-5 sm:w-6 sm:h-6 bg-gray-400 text-white rounded-full flex items-center justify-center shadow-md border-2 border-white">
-                          <Bot size={12} className="sm:w-4 sm:h-4" />
+                      ) : (
+                        <div className="absolute -top-2 -left-2 sm:-top-3 sm:-left-3 z-10">
+                          <div className="w-5 h-5 sm:w-6 sm:h-6 bg-gray-400 text-white rounded-full flex items-center justify-center shadow-md border-2 border-white">
+                            <Bot size={12} className="sm:w-4 sm:h-4" />
+                          </div>
                         </div>
-                      </div>
-                    )}
-                    {/* Message Bubble (icon not inside) */}
-                    <MessageBubble
-                      message={isLastAIStreaming ? streamedContent : message.content}
-                      isAI={!isUser}
-                      onCopy={() => copyToClipboard(isLastAIStreaming ? streamedContent : message.content, message.id)}
-                      copied={copiedMessageId === message.id}
-                    />
+                      )}
+                      {/* Message Bubble (icon not inside) */}
+                      <MessageBubble
+                        message={isLastAIStreaming ? streamedContent : message.content}
+                        isAI={!isUser}
+                        onCopy={() => copyToClipboard(isLastAIStreaming ? streamedContent : message.content, message.id)}
+                        copied={copiedMessageId === message.id}
+                      />
+                    </div>
                   </div>
                 </div>
-              </div>
-            );
-          })}
-          {/* Scroll anchor */}
-          <div id="messages-end" />
+              );
+            })}
+            {/* Scroll anchor */}
+            <div ref={messagesEndRef} id="messages-end" />
+          </div>
         </div>
         {/* Input area for chat */}
         <div className="p-2 sm:p-4 border-t border-gray-700 bg-gray-900 flex items-center gap-2">
@@ -204,6 +254,23 @@ const ConversationHistoryDrawer = () => {
           </Button>
         </div>
       </div>
+      <style jsx global>{`
+  .custom-scrollbar {
+    scrollbar-width: thin;
+    scrollbar-color: #334155 #18181b;
+  }
+  .custom-scrollbar::-webkit-scrollbar {
+    width: 8px;
+    background: #18181b;
+  }
+  .custom-scrollbar::-webkit-scrollbar-thumb {
+    background: linear-gradient(135deg, #334155 40%, #2563eb 100%);
+    border-radius: 8px;
+  }
+  .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+    background: linear-gradient(135deg, #2563eb 40%, #334155 100%);
+  }
+`}</style>
     </>
   );
 };
