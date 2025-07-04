@@ -115,7 +115,7 @@ const ConversationHistoryDrawer = () => {
 
       {/* Drawer */}
       <div
-        className={`fixed top-0 left-0 h-full w-96 bg-gradient-to-br from-black via-gray-900 to-gray-800 shadow-2xl z-50 transform transition-transform duration-300 ease-in-out ${isOpen ? 'translate-x-0' : '-translate-x-full'
+        className={`fixed top-0 left-0 h-full w-full max-w-full sm:w-96 bg-gradient-to-br from-black via-gray-900 to-gray-800 shadow-2xl z-50 transform transition-transform duration-300 ease-in-out ${isOpen ? 'translate-x-0' : '-translate-x-full'
           }`}
       >
         {/* Header */}
@@ -138,7 +138,7 @@ const ConversationHistoryDrawer = () => {
         </div>
 
         {/* Messages Container */}
-        <div className="flex-1 overflow-y-auto p-4 space-y-3" style={{ height: 'calc(100vh - 180px)' }}>
+        <div className="flex-1 overflow-y-auto p-2 sm:p-4 space-y-2 sm:space-y-3" style={{ height: 'calc(100vh - 180px)' }}>
           {messagesHistory.map((message: any, index: number) => {
             const isUser = message.role === 'user';
             const isConsecutive = index > 0 && messagesHistory[index - 1].role === message.role;
@@ -146,38 +146,34 @@ const ConversationHistoryDrawer = () => {
             return (
               <div
                 key={message.id || index}
-                className={`flex ${isUser ? 'justify-end' : 'justify-start'} ${isConsecutive ? 'mt-1' : 'mt-4'
-                  }`}
+                className={`flex w-full ${isUser ? 'justify-end' : 'justify-start'} ${isConsecutive ? 'mt-1' : 'mt-4'}`}
               >
-                <div className={`group relative max-w-xs lg:max-w-md ${isUser ? 'order-2' : 'order-1'}`}>
-                  {/* Avatar (only show if not consecutive) */}
-                  {!isConsecutive && (
-                    <div className={`flex ${isUser ? 'justify-end' : 'justify-start'} mb-1`}>
-                      <div className={`w-6 h-6 rounded-full flex items-center justify-center text-xs ${isUser ? 'bg-blue-500 text-white' : 'bg-gray-400 text-white'
-                        }`}>
-                        {isUser ? <User size={12} /> : <Bot size={12} />}
+                <div
+                  className={`relative w-full max-w-full sm:max-w-xs md:max-w-sm lg:max-w-md flex ${isUser ? 'justify-end' : 'justify-start'}`}
+                  style={{ overflow: "visible" }}
+                >
+                  {/* Message Bubble with icon in top corner */}
+                  <div className={`relative ${isUser ? 'ml-auto' : 'mr-auto'} max-w-[92vw] sm:max-w-[90%]`}>
+                    {/* Icon in top corner (not inside MessageBubble) */}
+                    {isUser ? (
+                      <div className="absolute -top-2 -right-2 sm:-top-3 sm:-right-3 z-10">
+                        <div className="w-5 h-5 sm:w-6 sm:h-6 bg-blue-500 text-white rounded-full flex items-center justify-center shadow-md border-2 border-white">
+                          <User size={12} className="sm:w-4 sm:h-4" />
+                        </div>
                       </div>
-                    </div>
-                  )}
-
-                  {/* Message Bubble */}
-                  <MessageBubble
-                    message={isLastAIStreaming ? streamedContent : message.content}
-                    isAI={!isUser}
-                    onCopy={() => copyToClipboard(isLastAIStreaming ? streamedContent : message.content, message.id)}
-                    copied={copiedMessageId === message.id}
-                  />
-
-                  {/* Message Tail */}
-                  <div
-                    className={`absolute top-0 w-3 h-3 ${isUser
-                        ? 'right-0 transform translate-x-1'
-                        : 'left-0 transform -translate-x-1'
-                      } ${!isConsecutive ? 'block' : 'hidden'}`}
-                  >
-                    <div
-                      className={`w-full h-full transform rotate-45 ${isUser ? 'bg-green-500' : 'bg-white border-l border-b border-gray-200'
-                        }`}
+                    ) : (
+                      <div className="absolute -top-2 -left-2 sm:-top-3 sm:-left-3 z-10">
+                        <div className="w-5 h-5 sm:w-6 sm:h-6 bg-gray-400 text-white rounded-full flex items-center justify-center shadow-md border-2 border-white">
+                          <Bot size={12} className="sm:w-4 sm:h-4" />
+                        </div>
+                      </div>
+                    )}
+                    {/* Message Bubble (icon not inside) */}
+                    <MessageBubble
+                      message={isLastAIStreaming ? streamedContent : message.content}
+                      isAI={!isUser}
+                      onCopy={() => copyToClipboard(isLastAIStreaming ? streamedContent : message.content, message.id)}
+                      copied={copiedMessageId === message.id}
                     />
                   </div>
                 </div>
@@ -188,10 +184,10 @@ const ConversationHistoryDrawer = () => {
           <div id="messages-end" />
         </div>
         {/* Input area for chat */}
-        <div className="p-4 border-t border-gray-700 bg-gray-900 flex items-center gap-2">
+        <div className="p-2 sm:p-4 border-t border-gray-700 bg-gray-900 flex items-center gap-2">
           <textarea
             ref={textareaRef}
-            className="flex-1 p-2 text-gray-300 bg-gray-800 rounded-md resize-none focus:outline-none focus:ring-2 focus:ring-blue-500"
+            className="flex-1 p-2 text-gray-300 bg-gray-800 rounded-md resize-none focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm sm:text-base"
             rows={2}
             value={text}
             onChange={(e) => setText(e.target.value)}
@@ -199,7 +195,7 @@ const ConversationHistoryDrawer = () => {
             disabled={sending}
           />
           <Button
-            className="px-4 py-2 text-white bg-blue-500 hover:bg-blue-600 rounded-md"
+            className="px-3 py-2 sm:px-4 sm:py-2 text-white bg-blue-500 hover:bg-blue-600 rounded-md text-sm sm:text-base"
             onPress={handleSend}
             isLoading={sending}
             disabled={sending || !text.trim()}

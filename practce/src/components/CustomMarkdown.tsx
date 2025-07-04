@@ -5,7 +5,6 @@ import remarkGfm from 'remark-gfm';
 import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter';
 import { vscDarkPlus } from 'react-syntax-highlighter/dist/esm/styles/prism';
 import type { Components } from 'react-markdown';
-// Add icons for copy/check
 import { Copy, Check } from 'lucide-react';
 
 interface MessageBubbleProps {
@@ -18,10 +17,11 @@ interface MessageBubbleProps {
 const MessageBubble: React.FC<MessageBubbleProps> = ({ message, isAI, onCopy, copied }) => {
   return (
     <div
-      className={`max-w-[70%] p-4 rounded-lg shadow-md relative group ${isAI
-          ? 'bg-gray-800 text-white'
-          : 'bg-blue-500 text-white'
+      className={`p-3 sm:p-4 rounded-lg shadow-md relative group break-words overflow-x-auto ${isAI
+        ? 'bg-gray-800 text-white'
+        : 'bg-blue-500 text-white'
         }`}
+      style={{ maxWidth: '100%' }}
     >
       {/* Copy button inside bubble, top-right */}
       {onCopy && (
@@ -57,13 +57,13 @@ const MessageBubble: React.FC<MessageBubbleProps> = ({ message, isAI, onCopy, co
               </code>
             );
           },
-          p: ({ children }) => <p className="mb-2">{children}</p>,
-          ul: ({ children }) => <ul className="list-disc pl-5 mb-2">{children}</ul>,
-          ol: ({ children }) => <ol className="list-decimal pl-5 mb-2">{children}</ol>,
-          li: ({ children }) => <li className="mb-1">{children}</li>,
-          h1: ({ children }) => <h1 className="text-2xl font-bold mb-2">{children}</h1>,
-          h2: ({ children }) => <h2 className="text-xl font-semibold mb-2">{children}</h2>,
-          h3: ({ children }) => <h3 className="text-lg font-medium mb-2">{children}</h3>,
+          p: ({ children }) => <p className="mb-2 text-sm sm:text-base">{children}</p>,
+          ul: ({ children }) => <ul className="list-disc pl-5 mb-2 text-sm sm:text-base">{children}</ul>,
+          ol: ({ children }) => <ol className="list-decimal pl-5 mb-2 text-sm sm:text-base">{children}</ol>,
+          li: ({ children }) => <li className="mb-1 text-sm sm:text-base">{children}</li>,
+          h1: ({ children }) => <h1 className="text-xl sm:text-2xl font-bold mb-2">{children}</h1>,
+          h2: ({ children }) => <h2 className="text-lg sm:text-xl font-semibold mb-2">{children}</h2>,
+          h3: ({ children }) => <h3 className="text-base sm:text-lg font-medium mb-2">{children}</h3>,
           a: ({ href, children }) => (
             <a
               href={href as string}

@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { FaMicrophone, FaMicrophoneSlash, FaVolumeUp, FaWaveSquare } from "react-icons/fa";
 import { useDispatch } from "react-redux";
 import SpeechRecognition, { useSpeechRecognition } from 'react-speech-recognition';
+import MessageBubble from './CustomMarkdown';
 /* eslint-disable */
 
 export const VoiceHandler = () => {
@@ -169,25 +170,25 @@ export const VoiceHandler = () => {
     }
 
     return (
-        <div className="w-full flex justify-center items-center p-6">
+        <div className="w-full flex justify-center items-center p-2 sm:p-4 md:p-6">
             <div className="w-full max-w-4xl">
                 {/* Main Voice Interface Card */}
-                <div className="bg-gradient-to-br from-gray-800 via-gray-900 to-black border border-gray-700 rounded-3xl p-8 shadow-2xl backdrop-blur-lg">
+                <div className="bg-gradient-to-br from-gray-800 via-gray-900 to-black border border-gray-700 rounded-3xl p-4 sm:p-6 md:p-8 shadow-2xl backdrop-blur-lg">
 
                     {/* Header */}
-                    <div className="text-center mb-8">
-                        <div className="flex items-center justify-center mb-3">
-                            <FaWaveSquare className="text-blue-400 text-2xl mr-3" />
-                            <h2 className="text-3xl font-bold bg-gradient-to-r from-blue-400 to-purple-400 bg-clip-text text-transparent">
+                    <div className="text-center mb-6 sm:mb-8">
+                        <div className="flex items-center justify-center mb-2 sm:mb-3">
+                            <FaWaveSquare className="text-blue-400 text-xl sm:text-2xl mr-2 sm:mr-3" />
+                            <h2 className="text-xl sm:text-3xl font-bold bg-gradient-to-r from-blue-400 to-purple-400 bg-clip-text text-transparent">
                                 AI Voice Assistant
                             </h2>
                         </div>
-                        <p className="text-gray-400 text-sm">Press the microphone to start speaking</p>
+                        <p className="text-gray-400 text-xs sm:text-sm">Press the microphone to start speaking</p>
                     </div>
 
                     {/* Voice Control Section */}
-                    <div className="flex flex-col items-center justify-center mb-8">
-                        <div className="relative mb-6">
+                    <div className="flex flex-col items-center justify-center mb-6 sm:mb-8">
+                        <div className="relative mb-4 sm:mb-6">
                             {/* Pulse Animation Ring */}
                             {listening && (
                                 <div className="absolute inset-0 rounded-full border-4 border-green-400 animate-ping opacity-75"></div>
@@ -198,53 +199,53 @@ export const VoiceHandler = () => {
 
                             {/* Microphone Button */}
                             <Button
-                                className={`relative p-8 rounded-full text-white flex items-center justify-center transition-all duration-300 transform hover:scale-105 ${microphoneHandle
-                                        ? "bg-gradient-to-r from-red-500 to-red-600 hover:from-red-600 hover:to-red-700 shadow-lg shadow-red-500/25"
-                                        : "bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 shadow-lg shadow-blue-500/25"
+                                className={`relative p-6 sm:p-8 rounded-full text-white flex items-center justify-center transition-all duration-300 transform hover:scale-105 ${microphoneHandle
+                                    ? "bg-gradient-to-r from-red-500 to-red-600 hover:from-red-600 hover:to-red-700 shadow-lg shadow-red-500/25"
+                                    : "bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 shadow-lg shadow-blue-500/25"
                                     }`}
                                 onPress={onMicButtonPress}
                                 disabled={isProcessing}
                             >
-                                {microphoneHandle ? <FaMicrophoneSlash size={36} /> : <FaMicrophone size={36} />}
+                                {microphoneHandle ? <FaMicrophoneSlash size={28} className="sm:size-9" /> : <FaMicrophone size={28} className="sm:size-9" />}
                             </Button>
                         </div>
 
                         {/* Status Indicator */}
-                        <div className="text-center min-h-[60px] flex flex-col items-center justify-center">
+                        <div className="text-center min-h-[40px] sm:min-h-[60px] flex flex-col items-center justify-center">
                             {listening && (
                                 <div className="flex flex-col items-center animate-fade-in">
-                                    <div className="flex items-center mb-3">
-                                        <div className="flex space-x-1 mr-3">
+                                    <div className="flex items-center mb-2 sm:mb-3">
+                                        <div className="flex space-x-1 mr-2 sm:mr-3">
                                             <div className="w-2 h-2 bg-green-400 rounded-full animate-bounce"></div>
                                             <div className="w-2 h-2 bg-green-400 rounded-full animate-bounce" style={{ animationDelay: '0.1s' }}></div>
                                             <div className="w-2 h-2 bg-green-400 rounded-full animate-bounce" style={{ animationDelay: '0.2s' }}></div>
                                         </div>
-                                        <span className="text-green-400 text-lg font-semibold">Listening...</span>
+                                        <span className="text-green-400 text-base sm:text-lg font-semibold">Listening...</span>
                                     </div>
                                 </div>
                             )}
                             {isProcessing && (
                                 <div className="flex items-center">
-                                    <div className="animate-spin rounded-full h-4 w-4 border-2 border-blue-400 border-t-transparent mr-3"></div>
-                                    <span className="text-blue-400 text-lg font-semibold">Processing...</span>
+                                    <div className="animate-spin rounded-full h-4 w-4 border-2 border-blue-400 border-t-transparent mr-2 sm:mr-3"></div>
+                                    <span className="text-blue-400 text-base sm:text-lg font-semibold">Processing...</span>
                                 </div>
                             )}
                             {!listening && !isProcessing && (
-                                <span className="text-gray-500 text-base">Ready to listen</span>
+                                <span className="text-gray-500 text-sm sm:text-base">Ready to listen</span>
                             )}
                         </div>
                     </div>
 
                     {/* Speech Input Display */}
                     {listening && (
-                        <div className="mb-8 animate-fade-in">
-                            <div className="bg-gradient-to-r from-gray-700 to-gray-800 border border-gray-600 rounded-2xl p-6 shadow-lg">
-                                <div className="flex items-center mb-3">
-                                    <FaMicrophone className="text-green-400 text-lg mr-2" />
-                                    <span className="text-green-400 font-semibold">Your Speech</span>
+                        <div className="mb-6 sm:mb-8 animate-fade-in">
+                            <div className="bg-gradient-to-r from-gray-700 to-gray-800 border border-gray-600 rounded-2xl p-4 sm:p-6 shadow-lg">
+                                <div className="flex items-center mb-2 sm:mb-3">
+                                    <FaMicrophone className="text-green-400 text-base sm:text-lg mr-1 sm:mr-2" />
+                                    <span className="text-green-400 font-semibold text-sm sm:text-base">Your Speech</span>
                                 </div>
-                                <div className="bg-gray-900 rounded-lg p-4 min-h-[60px] flex items-center">
-                                    <p className="text-white text-lg leading-relaxed">
+                                <div className="bg-gray-900 rounded-lg p-2 sm:p-4 min-h-[40px] sm:min-h-[60px] flex items-center">
+                                    <p className="text-white text-base sm:text-lg leading-relaxed break-words">
                                         {pendingSpokenText || (
                                             <span className="text-gray-500 italic">Start speaking...</span>
                                         )}
@@ -258,33 +259,34 @@ export const VoiceHandler = () => {
                     )}
 
                     {/* AI Response Section */}
-                    <div className="bg-gradient-to-r from-gray-700 to-gray-800 border border-gray-600 rounded-2xl p-6 shadow-lg">
-                        <div className="flex items-center mb-4">
-                            <FaVolumeUp className="text-blue-400 text-lg mr-2" />
-                            <span className="text-blue-400 font-semibold text-lg">AI Response</span>
+                    <div className="bg-gradient-to-r from-gray-700 to-gray-800 border border-gray-600 rounded-2xl p-4 sm:p-6 shadow-lg">
+                        <div className="flex items-center mb-3 sm:mb-4">
+                            <FaVolumeUp className="text-blue-400 text-base sm:text-lg mr-1 sm:mr-2" />
+                            <span className="text-blue-400 font-semibold text-base sm:text-lg">AI Response</span>
                             {isProcessing && (
-                                <div className="ml-3 flex space-x-1">
+                                <div className="ml-2 sm:ml-3 flex space-x-1">
                                     <div className="w-1 h-1 bg-blue-400 rounded-full animate-bounce"></div>
                                     <div className="w-1 h-1 bg-blue-400 rounded-full animate-bounce" style={{ animationDelay: '0.1s' }}></div>
                                     <div className="w-1 h-1 bg-blue-400 rounded-full animate-bounce" style={{ animationDelay: '0.2s' }}></div>
                                 </div>
                             )}
                         </div>
-                        <div className="bg-gray-900 rounded-lg p-6 min-h-[120px] flex items-start">
-                            <p className="text-gray-300 text-base leading-relaxed whitespace-pre-wrap">
-                                {spokenContent || (
-                                    <span className="text-gray-500 italic">AI response will appear here...</span>
-                                )}
+                        <div className="bg-gray-900 rounded-lg p-3 sm:p-6 min-h-[60px] sm:min-h-[120px] flex items-start">
+                            <div className="w-full">
+                                <MessageBubble
+                                    message={spokenContent || "AI response will appear here..."}
+                                    isAI={true}
+                                />
                                 {isProcessing && spokenContent && (
                                     <span className="inline-block w-2 h-5 bg-blue-400 ml-1 animate-pulse"></span>
                                 )}
-                            </p>
+                            </div>
                         </div>
                     </div>
 
                     {/* Footer Instructions */}
-                    <div className="mt-6 text-center">
-                        <p className="text-gray-500 text-sm">
+                    <div className="mt-4 sm:mt-6 text-center">
+                        <p className="text-gray-500 text-xs sm:text-sm">
                             💡 Tip: Speak clearly and wait for the response. The AI will automatically process your speech when you stop talking.
                         </p>
                     </div>
