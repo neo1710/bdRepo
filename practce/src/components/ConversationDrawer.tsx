@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { MessageCircle, X, User, Bot, Trash2 } from 'lucide-react';
+import { MessageCircle, X, User, Bot, Trash2, ChevronDown, Cpu, Zap } from 'lucide-react';
 import { useDispatch, useSelector } from "react-redux";
 import { addMessage, updateMessage } from "@/store/slices/conversationReducer";
 import { Button } from "@nextui-org/react";
@@ -13,10 +13,29 @@ const ConversationHistoryDrawer = () => {
   const [sending, setSending] = useState(false);
   const [streamedContent, setStreamedContent] = useState<string>("");
   const [clearing, setClearing] = useState(false);
+  const [model, setModel] = useState<"default" | "groq">("default");
+  const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const dispatch = useDispatch();
   const { messagesHistory } = useSelector((state: any) => state.conversation)
+
+  const models = [
+    {
+      value: "default",
+      label: "Default",
+      icon: <Cpu className="w-3 h-3" />,
+      description: "Standard performance"
+    },
+    {
+      value: "groq",
+      label: "Groq",
+      icon: <Zap className="w-3 h-3" />,
+      description: "High-speed inference"
+    }
+  ];
+
+  const selectedModel = models.find(m => m.value === model);
 
   const copyToClipboard = async (text: string, messageId: string) => {
     try {
@@ -45,7 +64,8 @@ const ConversationHistoryDrawer = () => {
       const response = await fetch("/api/get-gemini-response", {
         method: "POST",
         body: JSON.stringify({
-          message: text.trim()
+          message: text.trim(),
+          ...(model === "groq" ? { groq: true } : {})
         })
       });
 
@@ -126,7 +146,7 @@ const ConversationHistoryDrawer = () => {
       {/* Toggle Button */}
       <button
         onClick={() => setIsOpen(true)}
-        className="fixed top-4 left-4 z-40 p-3 bg-blue-600 hover:bg-blue-700 text-white rounded-full shadow-lg transition-all duration-200 hover:scale-105"
+        className="fixed top-12 left-4 z-40 p-3 bg-blue-600 hover:bg-blue-700 text-white rounded-full shadow-lg transition-all duration-200 hover:scale-105"
       >
         <MessageCircle size={20} />
       </button>
@@ -156,6 +176,65 @@ const ConversationHistoryDrawer = () => {
             </div>
           </div>
           <div className="flex items-center gap-2">
+            {/* Model Dropdown */}
+            <div className="relative">
+              <button
+                onClick={() => setIsDropdownOpen(!isDropdownOpen)}
+                className="inline-flex items-center justify-between w-24 px-2 py-1 text-xs font-medium text-white bg-blue-700 hover:bg-blue-800 rounded border border-blue-600 shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-400 focus:ring-offset-1 transition-all duration-200"
+              >
+                <div className="flex items-center space-x-1">
+                  <div className="text-blue-200">
+                    {selectedModel?.icon}
+                  </div>
+                  <span className="truncate">{selectedModel?.label}</span>
+                </div>
+                <ChevronDown
+                  className={`w-3 h-3 text-blue-200 transition-transform duration-200 ${isDropdownOpen ? 'rotate-180' : ''
+                    }`}
+                />
+              </button>
+
+              {isDropdownOpen && (
+                <div className="absolute z-10 w-32 mt-1 bg-white border border-gray-200 rounded-lg shadow-lg ring-1 ring-black ring-opacity-5 right-0">
+                  <div className="py-1">
+                    {models.map((modelOption) => (
+                      <button
+                        key={modelOption.value}
+                        onClick={() => {
+                          setModel(modelOption.value as "default" | "groq");
+                          setIsDropdownOpen(false);
+                        }}
+                        className={`w-full px-3 py-2 text-left flex items-center space-x-2 hover:bg-gray-50 transition-colors duration-150 ${model === modelOption.value
+                            ? 'bg-blue-50 text-blue-700'
+                            : 'text-gray-700'
+                          }`}
+                      >
+                        <div className={`${model === modelOption.value ? 'text-blue-600' : 'text-gray-400'
+                          }`}>
+                          {modelOption.icon}
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <div className="text-xs font-medium truncate">
+                            {modelOption.label}
+                          </div>
+                        </div>
+                        {model === modelOption.value && (
+                          <div className="w-1.5 h-1.5 bg-blue-600 rounded-full"></div>
+                        )}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* Backdrop to close dropdown when clicking outside */}
+              {isDropdownOpen && (
+                <div
+                  className="fixed inset-0 z-0"
+                  onClick={() => setIsDropdownOpen(false)}
+                />
+              )}
+            </div>
             <button
               onClick={handleClearChat}
               className="p-2 hover:bg-red-600 rounded-full transition-colors duration-200"

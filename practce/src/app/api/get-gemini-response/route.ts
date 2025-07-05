@@ -1,14 +1,23 @@
 /* eslint-disable */
 export async function POST(request: Request) {
-  const apiKey = process.env.NEXT_PUBLIC_MISTRAL_API_KEY; // Changed from NEXT_PUBLIC_
-  const url = "https://api.mistral.ai/v1/chat/completions";
+  const mistralApiKey = process.env.NEXT_PUBLIC_MISTRAL_API_KEY;
+  const groqApiKey = process.env.NEXT_PUBLIC_GROQ_API_KEY;
+  const mistralUrl = "https://api.mistral.ai/v1/chat/completions";
+  const groqUrl = "https://api.groq.com/openai/v1/chat/completions"; // Correct Groq endpoint
 
   try {
-    // Parse the incoming request body to get the user's message
+    // Parse the incoming request body
     const requestData = await request.json();
-    const userMessage = requestData.message || "Hello"; // Default message if none provided
+    const userMessage = requestData.message || "Hello";
+    const useGroq = requestData.groq === true;
+
+    // Select API key and URL
+    const apiKey = useGroq ? groqApiKey : mistralApiKey;
+    const url = useGroq ? groqUrl : mistralUrl;
+
+    // Configure request body
     const requestBody = {
-      model: "mistral-small-latest",
+      model: useGroq ? "llama3-8b-8192" : "mistral-small-latest", // Groq free tier model
       messages: [
         {
           role: "user",
@@ -16,43 +25,40 @@ export async function POST(request: Request) {
         }
       ],
       temperature: 1.0,
-      top_p: 1,
-      max_tokens: 100,
-      stream: true,
-      safe_prompt: false
+      top_p: 1.0,
+      max_tokens: 100, // Ensure within Groq's limit for llama3-8b-8192
+      stream: true
     };
 
     if (!apiKey) {
-      console.error("API key is missing from environment variables");
-      throw new Error("API key is missing from environment variables");
+      console.error(`${useGroq ? 'Groq' : 'Mistral'} API key is missing from environment variables`);
+      throw new Error(`${useGroq ? 'Groq' : 'Mistral'} API key is missing`);
     }
 
-    // Debugging: Log the API key (only for local debugging, remove in production)
-    console.log("Using API Key:", apiKey);
+    // Debugging: Log request details
+    console.log(`Requesting ${useGroq ? 'Groq' : 'Mistral'} API at ${url}`);
+    console.log("Request Body:", JSON.stringify(requestBody, null, 2));
 
-    // If stream is true, we need to handle the response differently
+    // Make the API request
+    const response = await fetch(url, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${apiKey}`
+      },
+      body: JSON.stringify(requestBody)
+    });
+
+    // Check for HTTP errors
+    if (!response.ok) {
+      const errorDetails = await response.text();
+      console.error(`HTTP Error ${response.status}:`, errorDetails);
+      throw new Error(`HTTP ${response.status}: ${errorDetails}`);
+    }
+
+    // Handle streaming response
     if (requestBody.stream) {
-      const response = await fetch(url, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${apiKey}` // Ensure this is correctly set
-        },
-        body: JSON.stringify(requestBody)
-      });
-
-      // Debugging: Log response status for 401 errors
-      if (response.status === 401) {
-        console.error("Unauthorized: Check API key or permissions");
-        const errorDetails = await response.text();
-        console.error("Response body:", errorDetails);
-      }
-
-      // Clone the response to avoid locking the body
-      const clonedResponse = response.clone();
-
-      // Simply forward the streaming response to the client
-      return new Response(clonedResponse.body, {
+      return new Response(response.body, {
         headers: {
           'Content-Type': 'text/event-stream',
           'Cache-Control': 'no-cache',
@@ -61,42 +67,14 @@ export async function POST(request: Request) {
       });
     } else {
       // For non-streaming responses
-      const response = await fetch(url, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${apiKey}` // Ensure this is correctly set
-        },
-        body: JSON.stringify(requestBody)
-      });
-
-      // Debugging: Log response status for 401 errors
-      if (response.status === 401) {
-        console.error("Unauthorized: Check API key or permissions");
-        const errorDetails = await response.text();
-        console.error("Response body:", errorDetails);
-      }
-
-      if (!response.ok) {
-        const errorData = await response.json();
-        console.error("Mistral API error:", errorData);
-        return new Response(JSON.stringify({ error: errorData }), {
-          status: response.status,
-          headers: { 'Content-Type': 'application/json' }
-        });
-      }
-
-      // Clone the response to avoid locking the body
-      const clonedResponse = response.clone();
-      const data = await clonedResponse.json();
-
+      const data = await response.json();
       return new Response(JSON.stringify(data), {
         status: 200,
         headers: { 'Content-Type': 'application/json' }
       });
     }
   } catch (error: any) {
-    console.error("Error with Mistral API request:", error);
+    console.error(`Error with API request:`, error.message);
     return new Response(JSON.stringify({ error: error.message }), {
       status: 500,
       headers: { 'Content-Type': 'application/json' }
