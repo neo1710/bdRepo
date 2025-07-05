@@ -1,6 +1,6 @@
 import { addMessage, updateMessage } from "@/store/slices/conversationReducer";
 import { Button } from "@nextui-org/react"
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import { FaMicrophone, FaMicrophoneSlash, FaVolumeUp, FaWaveSquare, FaRegPlayCircle } from "react-icons/fa";
 import { useDispatch } from "react-redux";
 import SpeechRecognition, { useSpeechRecognition } from 'react-speech-recognition';
@@ -13,6 +13,9 @@ export const VoiceHandler = () => {
     const [isSpeechComplete, setIsSpeechComplete] = useState(true);
     const [pendingSpokenText, setPendingSpokenText] = useState<string>("");
     const [isProcessing, setIsProcessing] = useState(false);
+    const [model, setModel] = useState<"default" | "groq">("default");
+    const [isDropdownOpen, setIsDropdownOpen] = useState(false);
+    const dropdownRef = useRef<HTMLDivElement>(null);
     const dispatch = useDispatch();
 
     const {
@@ -21,6 +24,22 @@ export const VoiceHandler = () => {
         resetTranscript,
         browserSupportsSpeechRecognition,
     } = useSpeechRecognition();
+
+    const models = [
+        {
+            value: "default",
+            label: "Default",
+            icon: <svg className="w-3 h-3" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24"><circle cx="12" cy="12" r="10" /><path d="M8 12h8" /></svg>,
+            description: "Standard performance"
+        },
+        {
+            value: "groq",
+            label: "Groq",
+            icon: <svg className="w-3 h-3" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24"><path d="M13 2L3 14h9l-1 8L21 10h-9l1-8z" /></svg>,
+            description: "High-speed inference"
+        }
+    ];
+    const selectedModel = models.find(m => m.value === model);
 
     // When speech recognition stops and transcript is available, auto-send the message
     useEffect(() => {
@@ -50,6 +69,19 @@ export const VoiceHandler = () => {
             setPendingSpokenText(transcript);
         }
     }, [transcript, listening]);
+
+    // Close dropdown on outside click
+    useEffect(() => {
+        function handleClickOutside(event: MouseEvent) {
+            if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
+                setIsDropdownOpen(false);
+            }
+        }
+        if (isDropdownOpen) {
+            document.addEventListener("mousedown", handleClickOutside);
+        }
+        return () => document.removeEventListener("mousedown", handleClickOutside);
+    }, [isDropdownOpen]);
 
     const onMicButtonPress = () => {
         if (microphoneHandle) {
@@ -92,7 +124,8 @@ export const VoiceHandler = () => {
             const response = await fetch("/api/get-gemini-response", {
                 method: "POST",
                 body: JSON.stringify({
-                    message: messageToSend
+                    message: messageToSend,
+                    ...(model === "groq" ? { groq: true } : {})
                 })
             });
 
@@ -196,6 +229,46 @@ export const VoiceHandler = () => {
                             </h2>
                         </div>
                         <p className="text-gray-400 text-xs sm:text-sm">Press the microphone to start speaking</p>
+                        {/* Model Dropdown */}
+                        <div className="flex justify-center mt-3">
+                            <div className="relative" ref={dropdownRef}>
+                                <button
+                                    onClick={() => setIsDropdownOpen(v => !v)}
+                                    className="inline-flex items-center justify-between w-28 px-2 py-1 text-xs font-medium text-white bg-blue-700 hover:bg-blue-800 rounded border border-blue-600 shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-400 focus:ring-offset-1 transition-all duration-200"
+                                >
+                                    <div className="flex items-center space-x-1">
+                                        <span className="text-blue-200">{selectedModel?.icon}</span>
+                                        <span className="truncate">{selectedModel?.label}</span>
+                                    </div>
+                                    <svg className={`w-3 h-3 ml-1 text-blue-200 transition-transform duration-200 ${isDropdownOpen ? 'rotate-180' : ''}`} fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24"><path d="M19 9l-7 7-7-7" /></svg>
+                                </button>
+                                {isDropdownOpen && (
+                                    <div className="absolute z-10 w-32 mt-1 bg-white border border-gray-200 rounded-lg shadow-lg ring-1 ring-black ring-opacity-5 right-0">
+                                        <div className="py-1">
+                                            {models.map((modelOption) => (
+                                                <button
+                                                    key={modelOption.value}
+                                                    onClick={() => {
+                                                        setModel(modelOption.value as "default" | "groq");
+                                                        setIsDropdownOpen(false);
+                                                    }}
+                                                    className={`w-full px-3 py-2 text-left flex items-center space-x-2 hover:bg-gray-50 transition-colors duration-150 ${model === modelOption.value
+                                                        ? 'bg-blue-50 text-blue-700'
+                                                        : 'text-gray-700'
+                                                        }`}
+                                                >
+                                                    <span className={`${model === modelOption.value ? 'text-blue-600' : 'text-gray-400'}`}>{modelOption.icon}</span>
+                                                    <span className="text-xs font-medium truncate">{modelOption.label}</span>
+                                                    {model === modelOption.value && (
+                                                        <span className="w-1.5 h-1.5 bg-blue-600 rounded-full"></span>
+                                                    )}
+                                                </button>
+                                            ))}
+                                        </div>
+                                    </div>
+                                )}
+                            </div>
+                        </div>
                     </div>
 
                     {/* Voice Control Section */}

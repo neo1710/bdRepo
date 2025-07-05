@@ -180,13 +180,14 @@ const ConversationHistoryDrawer = () => {
             <div className="relative">
               <button
                 onClick={() => setIsDropdownOpen(!isDropdownOpen)}
-                className="inline-flex items-center justify-between w-24 px-2 py-1 text-xs font-medium text-white bg-blue-700 hover:bg-blue-800 rounded border border-blue-600 shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-400 focus:ring-offset-1 transition-all duration-200"
+                className="inline-flex items-center justify-between w-auto px-2 py-1 text-xs font-medium text-white bg-blue-700 hover:bg-blue-800 rounded border border-blue-600 shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-400 focus:ring-offset-1 transition-all duration-200"
               >
                 <div className="flex items-center space-x-1">
                   <div className="text-blue-200">
                     {selectedModel?.icon}
                   </div>
-                  <span className="truncate">{selectedModel?.label}</span>
+                  {/* Responsive: hide label on small screens, show on sm+ */}
+                  <span className="truncate hidden sm:inline">{selectedModel?.label}</span>
                 </div>
                 <ChevronDown
                   className={`w-3 h-3 text-blue-200 transition-transform duration-200 ${isDropdownOpen ? 'rotate-180' : ''
