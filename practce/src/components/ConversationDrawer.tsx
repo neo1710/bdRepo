@@ -13,7 +13,7 @@ const ConversationHistoryDrawer = () => {
   const [sending, setSending] = useState(false);
   const [streamedContent, setStreamedContent] = useState<string>("");
   const [clearing, setClearing] = useState(false);
-  const [model, setModel] = useState<"default" | "groq">("default");
+  const [model, setModel] = useState<"default" | "groq" | "sonar">("default");
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
@@ -32,6 +32,12 @@ const ConversationHistoryDrawer = () => {
       label: "Groq",
       icon: <Zap className="w-3 h-3" />,
       description: "High-speed inference"
+    },
+    {
+      value: "sonar",
+      label: "Sonar Pro",
+      icon: <Zap className="w-3 h-3" />,
+      description: "Perplexity Sonar"
     }
   ];
 
@@ -52,7 +58,6 @@ const ConversationHistoryDrawer = () => {
     if (!text.trim()) return;
     setSending(true);
 
-    // Add user message
     dispatch(addMessage({ role: "user", content: text.trim() }));
 
     try {
@@ -65,42 +70,91 @@ const ConversationHistoryDrawer = () => {
         method: "POST",
         body: JSON.stringify({
           message: text.trim(),
-          ...(model === "groq" ? { groq: true } : {})
+          model: model
         })
       });
 
-      if (!response.ok) {
-        throw new Error(`Error: ${response.status}`);
-      }
+      if (!response.ok) throw new Error(`Error: ${response.status}`);
 
       const reader = response.body?.getReader();
-      if (!reader) throw new Error("Failed to get reader from response body");
+      if (!reader) throw new Error("Failed to get reader");
 
       const decoder = new TextDecoder();
+      let buffer = '';
       let accumulatedContent = "";
 
       while (true) {
         const { done, value } = await reader.read();
         if (done) break;
-        const chunk = decoder.decode(value, { stream: true });
-        const lines = chunk.split("\n");
+
+        // Append new chunks to buffer
+        buffer += decoder.decode(value, { stream: true });
+
+        // Process complete lines from buffer
+        const lines = buffer.split('\n');
+        buffer = lines.pop() || ''; // Keep the last incomplete line in buffer
+
         for (const line of lines) {
-          if (line.startsWith("data: ") && line !== "data: [DONE]") {
+          if (line.startsWith('data: ')) {
             try {
-              const jsonData = JSON.parse(line.substring(6));
-              if (jsonData.choices && jsonData.choices[0].delta.content) {
-                const newContent = jsonData.choices[0].delta.content;
-                accumulatedContent += newContent;
-                setStreamedContent(accumulatedContent);
-                dispatch(updateMessage({
-                  id: messageId,
-                  content: accumulatedContent
-                }));
+              const jsonStr = line.slice(6); // Remove 'data: ' prefix
+              if (jsonStr === '[DONE]') continue;
+
+              const jsonData = JSON.parse(jsonStr);
+
+              // Handle Perplexity's response format
+              if (model === "sonar") {
+                const content = jsonData.choices?.[0]?.delta?.content ??
+                  jsonData.choices?.[0]?.text ??
+                  jsonData.choices?.[0]?.delta?.text ?? '';
+
+                if (content) {
+                  accumulatedContent += content;
+                  setStreamedContent(accumulatedContent);
+                  dispatch(updateMessage({
+                    id: messageId,
+                    content: accumulatedContent
+                  }));
+                }
+              } else {
+                // Handle other models
+                const content = jsonData.choices?.[0]?.delta?.content || '';
+                if (content) {
+                  accumulatedContent += content;
+                  setStreamedContent(accumulatedContent);
+                  dispatch(updateMessage({
+                    id: messageId,
+                    content: accumulatedContent
+                  }));
+                }
               }
             } catch (e) {
-              // ignore parse errors
+              // Handle parse errors silently for incomplete chunks
             }
           }
+        }
+      }
+
+      // Process any remaining content in buffer
+      if (buffer) {
+        try {
+          const jsonData = JSON.parse(buffer.replace('data: ', ''));
+          const finalContent = model === "sonar"
+            ? jsonData.choices?.[0]?.delta?.content ??
+            jsonData.choices?.[0]?.text ??
+            jsonData.choices?.[0]?.delta?.text ?? ''
+            : jsonData.choices?.[0]?.delta?.content || '';
+
+          if (finalContent) {
+            accumulatedContent += finalContent;
+            setStreamedContent(accumulatedContent);
+            dispatch(updateMessage({
+              id: messageId,
+              content: accumulatedContent
+            }));
+          }
+        } catch (e) {
+          // Ignore parse errors for final chunk
         }
       }
     } catch (error) {
@@ -202,12 +256,12 @@ const ConversationHistoryDrawer = () => {
                       <button
                         key={modelOption.value}
                         onClick={() => {
-                          setModel(modelOption.value as "default" | "groq");
+                          setModel(modelOption.value as "default" | "groq" | "sonar");
                           setIsDropdownOpen(false);
                         }}
                         className={`w-full px-3 py-2 text-left flex items-center space-x-2 hover:bg-gray-50 transition-colors duration-150 ${model === modelOption.value
-                            ? 'bg-blue-50 text-blue-700'
-                            : 'text-gray-700'
+                          ? 'bg-blue-50 text-blue-700'
+                          : 'text-gray-700'
                           }`}
                       >
                         <div className={`${model === modelOption.value ? 'text-blue-600' : 'text-gray-400'

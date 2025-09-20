@@ -2,50 +2,78 @@
 export async function POST(request: Request) {
   const mistralApiKey = process.env.NEXT_PUBLIC_MISTRAL_API_KEY;
   const groqApiKey = process.env.NEXT_PUBLIC_GROQ_API_KEY;
+  const perplexityApiKey = process.env.NEXT_PUBLIC_PERPLEXITY_API_KEY;
   const mistralUrl = "https://api.mistral.ai/v1/chat/completions";
   const groqUrl = "https://api.groq.com/openai/v1/chat/completions"; // Correct Groq endpoint
+  const perplexityUrl = "https://api.perplexity.ai/chat/completions";
 
   try {
     // Parse the incoming request body
     const requestData = await request.json();
     const userMessage = requestData.message || "Hello";
-    const useGroq = requestData.groq === true;
+    const model = requestData.model || "default";
 
-    // Select API key and URL
-    const apiKey = useGroq ? groqApiKey : mistralApiKey;
-    const url = useGroq ? groqUrl : mistralUrl;
+    // Select API key and URL based on model
+    let apiKey, url, modelName;
+    switch (model) {
+      case "groq":
+        apiKey = groqApiKey;
+        url = groqUrl;
+        modelName = "llama3-8b-8192";
+        break;
+      case "sonar":
+        apiKey = perplexityApiKey;
+        url = perplexityUrl;
+        modelName = "sonar-pro";
+        break;
+      default:
+        apiKey = mistralApiKey;
+        url = mistralUrl;
+        modelName = "mistral-small-latest";
+    }
 
-    // Configure request body
-    const requestBody = {
-      model: useGroq ? "llama3-8b-8192" : "mistral-small-latest", // Groq free tier model
-      messages: [
-        {
-          role: "user",
-          content: userMessage
-        }
-      ],
-      temperature: 1.0,
-      top_p: 1.0,
-      max_tokens: 100, // Ensure within Groq's limit for llama3-8b-8192
-      stream: true
-    };
+    // Configure request body based on model
+    let requestBody;
+    if (model === "sonar") {
+      requestBody = {
+        model: modelName,
+        messages: [{ role: "user", content: userMessage }],
+        stream: true
+      };
+    } else {
+      requestBody = {
+        model: modelName,
+        messages: [{ role: "user", content: userMessage }],
+        temperature: 1.0,
+        top_p: 1.0,
+        max_tokens: 100,
+        stream: true
+      };
+    }
 
     if (!apiKey) {
-      console.error(`${useGroq ? 'Groq' : 'Mistral'} API key is missing from environment variables`);
-      throw new Error(`${useGroq ? 'Groq' : 'Mistral'} API key is missing`);
+      console.error(`API key is missing for ${model} model`);
+      throw new Error(`API key is missing for ${model} model`);
     }
 
     // Debugging: Log request details
-    console.log(`Requesting ${useGroq ? 'Groq' : 'Mistral'} API at ${url}`);
+    console.log(`Requesting ${model} API at ${url}`);
     console.log("Request Body:", JSON.stringify(requestBody, null, 2));
 
-    // Make the API request
+    // Make the API request with correct headers per model
+    const headers: Record<string, string> = {
+      'Content-Type': 'application/json',
+      'Authorization': `Bearer ${apiKey}`
+    };
+
+    // Add specific headers for Mistral
+    if (model === "default") {
+      headers['Accept'] = 'application/json';
+    }
+
     const response = await fetch(url, {
       method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${apiKey}`
-      },
+      headers,
       body: JSON.stringify(requestBody)
     });
 
