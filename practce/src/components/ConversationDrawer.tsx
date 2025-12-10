@@ -173,6 +173,14 @@ const ConversationHistoryDrawer = () => {
     }, 600); // Animation duration
   };
 
+  // Handle Enter key to send message
+  const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
+    if (e.key === 'Enter' && !e.shiftKey) {
+      e.preventDefault();
+      handleSend();
+    }
+  };
+
   // Auto-scroll while streaming, stop when not streaming
   useEffect(() => {
     if (streamedContent) {
@@ -375,6 +383,7 @@ const ConversationHistoryDrawer = () => {
             rows={2}
             value={text}
             onChange={(e) => setText(e.target.value)}
+            onKeyDown={handleKeyDown}
             placeholder="Type your message..."
             disabled={sending}
           />
