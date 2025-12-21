@@ -2,7 +2,7 @@ import { addMessage, updateMessage } from "@/store/slices/conversationReducer";
 import { Button } from "@nextui-org/react"
 import { useEffect, useState, useRef } from "react";
 import { FaMicrophone, FaMicrophoneSlash, FaVolumeUp, FaWaveSquare, FaRegPlayCircle } from "react-icons/fa";
-import { useDispatch } from "react-redux";
+import { useDispatch, useSelector } from "react-redux";
 import SpeechRecognition, { useSpeechRecognition } from 'react-speech-recognition';
 import MessageBubble from './CustomMarkdown';
 /* eslint-disable */
@@ -13,10 +13,11 @@ export const VoiceHandler = () => {
     const [isSpeechComplete, setIsSpeechComplete] = useState(true);
     const [pendingSpokenText, setPendingSpokenText] = useState<string>("");
     const [isProcessing, setIsProcessing] = useState(false);
-    const [model, setModel] = useState<"default" | "groq">("default");
+    const [model, setModel] = useState<"default" | "groq" | "sonar">("sonar");
     const [isDropdownOpen, setIsDropdownOpen] = useState(false);
     const dropdownRef = useRef<HTMLDivElement>(null);
     const dispatch = useDispatch();
+    const { messagesHistory } = useSelector((state: any) => state.conversation);
 
     const {
         transcript,
@@ -37,6 +38,12 @@ export const VoiceHandler = () => {
             label: "Groq",
             icon: <svg className="w-3 h-3" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24"><path d="M13 2L3 14h9l-1 8L21 10h-9l1-8z" /></svg>,
             description: "High-speed inference"
+        },
+        {
+            value: "sonar",
+            label: "Sonar Pro",
+            icon: <svg className="w-3 h-3" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24"><path d="M13 2L3 14h9l-1 8L21 10h-9l1-8z" /></svg>,
+            description: "Perplexity Sonar"
         }
     ];
     const selectedModel = models.find(m => m.value === model);
@@ -115,17 +122,24 @@ export const VoiceHandler = () => {
             const messageId = Date.now().toString(); // Simple unique ID
 
             // Add initial empty AI message to the state
-            dispatch(addMessage({ id: messageId, role: "AI", content: "" }));
+            dispatch(addMessage({ id: messageId, role: "assistant", content: "" }));
 
             // Reset the input field
             resetTranscript();
+
+            // Prepare conversation history with proper roles
+            const conversationHistory = messagesHistory.map((msg: any) => ({
+                role: msg.role === "AI" ? "assistant" : msg.role,
+                content: msg.content
+            }));
 
             // Make the request with streaming enabled
             const response = await fetch("/api/get-gemini-response", {
                 method: "POST",
                 body: JSON.stringify({
                     message: messageToSend,
-                    ...(model === "groq" ? { groq: true } : {})
+                    model: model,
+                    conversationHistory: conversationHistory
                 })
             });
 
@@ -141,6 +155,7 @@ export const VoiceHandler = () => {
 
             const decoder = new TextDecoder();
             let accumulatedContent = ""; // Keep track of the full content so far
+            let buffer = '';
 
             // Read the stream
             while (true) {
@@ -148,22 +163,37 @@ export const VoiceHandler = () => {
                 if (done) break;
 
                 // Decode the chunk and process it
-                const chunk = decoder.decode(value, { stream: true });
+                buffer += decoder.decode(value, { stream: true });
+
+                // Process complete lines from buffer
+                const lines = buffer.split('\n');
+                buffer = lines.pop() || ''; // Keep the last incomplete line in buffer
 
                 // For Mistral API, we need to parse the SSE format
-                const lines = chunk.split("\n");
                 for (const line of lines) {
-                    if (line.startsWith("data: ") && line !== "data: [DONE]") {
+                    if (line.startsWith("data: ")) {
                         try {
+                            const jsonStr = line.slice(6); // Remove 'data: ' prefix
+                            if (jsonStr === '[DONE]') continue;
+
                             // Parse the JSON in the data line
-                            const jsonData = JSON.parse(line.substring(6));
+                            const jsonData = JSON.parse(jsonStr);
 
-                            // Extract the content delta (the new piece of text)
-                            if (jsonData.choices && jsonData.choices[0].delta.content) {
-                                const newContent = jsonData.choices[0].delta.content;
+                            // Handle different model response formats
+                            let content = '';
+                            if (model === "sonar") {
+                                // Handle Perplexity's response format
+                                content = jsonData.choices?.[0]?.delta?.content ??
+                                    jsonData.choices?.[0]?.text ??
+                                    jsonData.choices?.[0]?.delta?.text ?? '';
+                            } else {
+                                // Handle other models (Mistral, Groq)
+                                content = jsonData.choices?.[0]?.delta?.content || '';
+                            }
 
+                            if (content) {
                                 // Update our accumulated content
-                                accumulatedContent += newContent;
+                                accumulatedContent += content;
 
                                 // Update the spoken content for speech synthesis if you're using it
                                 setSpokenContent(accumulatedContent);

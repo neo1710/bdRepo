@@ -13,7 +13,7 @@ const ConversationHistoryDrawer = () => {
   const [sending, setSending] = useState(false);
   const [streamedContent, setStreamedContent] = useState<string>("");
   const [clearing, setClearing] = useState(false);
-  const [model, setModel] = useState<"default" | "groq" | "sonar">("default");
+  const [model, setModel] = useState<"default" | "groq" | "sonar">("sonar");
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
@@ -62,15 +62,22 @@ const ConversationHistoryDrawer = () => {
 
     try {
       const messageId = Date.now().toString();
-      dispatch(addMessage({ id: messageId, role: "AI", content: "" }));
+      dispatch(addMessage({ id: messageId, role: "assistant", content: "" }));
       setText("");
       setStreamedContent("");
+
+      // Prepare conversation history with proper roles
+      const conversationHistory = messagesHistory.map((msg: any) => ({
+        role: msg.role === "AI" ? "assistant" : msg.role,
+        content: msg.content
+      }));
 
       const response = await fetch("/api/get-gemini-response", {
         method: "POST",
         body: JSON.stringify({
           message: text.trim(),
-          model: model
+          model: model,
+          conversationHistory: conversationHistory
         })
       });
 
@@ -333,7 +340,7 @@ const ConversationHistoryDrawer = () => {
             {messagesHistory.map((message: any, index: number) => {
               const isUser = message.role === 'user';
               const isConsecutive = index > 0 && messagesHistory[index - 1].role === message.role;
-              const isLastAIStreaming = !isUser && index === messagesHistory.length - 1 && streamedContent;
+              const isLastAIStreaming = (message.role === 'assistant' || message.role === 'AI') && index === messagesHistory.length - 1 && streamedContent;
               return (
                 <div
                   key={message.id || index}

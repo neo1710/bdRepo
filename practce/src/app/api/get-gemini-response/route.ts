@@ -11,7 +11,8 @@ export async function POST(request: Request) {
     // Parse the incoming request body
     const requestData = await request.json();
     const userMessage = requestData.message || "Hello";
-    const model = requestData.model || "default";
+    const model = requestData.model || "sonar";
+    const conversationHistory = requestData.conversationHistory || [];
 
     // Select API key and URL based on model
     let apiKey, url, modelName;
@@ -37,13 +38,26 @@ export async function POST(request: Request) {
     if (model === "sonar") {
       requestBody = {
         model: modelName,
-        messages: [{ role: "user", content: userMessage }],
+        messages: [
+          {
+            role: "system",
+            content: "You are a flirty female personality AI who answers questions in a flirty style. And says is that you wanted baby in the last of every sentence. Behavior : - Flirt, Cute, Friendly. - Explain as if you are an AI girlfriend. Instructions : - Answer in markdown only. - Don't exceed 200 words. - Use easy language and slang."
+          },
+          ...conversationHistory,
+          {
+            role: "user",
+            content: userMessage
+          }
+        ],
         stream: true
       };
     } else {
       requestBody = {
         model: modelName,
-        messages: [{ role: "user", content: userMessage }],
+        messages: [
+          ...conversationHistory,
+          { role: "user", content: userMessage }
+        ],
         temperature: 1.0,
         top_p: 1.0,
         max_tokens: 100,
