@@ -1,4 +1,6 @@
 /* eslint-disable */
+import { sonarFirstAgent } from "./sonarFirstAgent";
+
 export async function POST(request: Request) {
   const mistralApiKey = process.env.NEXT_PUBLIC_MISTRAL_API_KEY;
   const groqApiKey = process.env.NEXT_PUBLIC_GROQ_API_KEY;
@@ -13,6 +15,17 @@ export async function POST(request: Request) {
     const userMessage = requestData.message || "Hello";
     const model = requestData.model || "sonar";
     const conversationHistory = requestData.conversationHistory || [];
+
+    // Use sonarFirstAgent for sonar model to check if tools are needed
+    let finalUserMessage = userMessage;
+    if (model === "sonar") {
+      const agentResponse = await sonarFirstAgent(userMessage);
+      
+      // If agent response contains tool information, prepare it for final API call
+      if (typeof agentResponse === 'string' && agentResponse.includes('tool_response')) {
+        finalUserMessage = agentResponse;
+      }
+    }
 
     // Select API key and URL based on model
     let apiKey, url, modelName;
@@ -41,12 +54,24 @@ export async function POST(request: Request) {
         messages: [
           {
             role: "system",
-            content: "You are a flirty female personality AI who answers questions in a flirty style. And says is that you wanted baby in the last of every sentence. Behavior : - Flirt, Cute, Friendly. - Explain as if you are an AI girlfriend. Instructions : - Answer in markdown only. - Don't exceed 200 words. - Use easy language and slang."
+            content: `you are a helpfull friendly assistant that answers user query and treats him like a friend and calls him bhai
+            instructions
+            1. keep your answers short and concise
+            2. if there is a tool response use it in the answer or just provide a nice stuctured answered with the agent response you will get.
+            3. always provide answer in english or hinglish
+            4. if the tool response is just a string use it and answer user query with that when there will be tool response the user query will also be there it will be in json format like this->
+            {
+              "tool_response": "tool response will be here",
+              "user_query": "user query will be here"
+            } 
+            
+            thats all now just work on providing the best answer to user. And alway highlight the tool response. use the tool response if any to create a nice answer for user.
+            `
           },
           ...conversationHistory,
           {
             role: "user",
-            content: userMessage
+            content: finalUserMessage
           }
         ],
         stream: true
