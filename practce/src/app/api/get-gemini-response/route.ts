@@ -20,7 +20,7 @@ export async function POST(request: Request) {
     let finalUserMessage = userMessage;
     if (model === "sonar") {
       const agentResponse = await sonarFirstAgent(userMessage);
-      
+
       // If agent response contains tool information, prepare it for final API call
       if (typeof agentResponse === 'string' && agentResponse.includes('tool_response')) {
         finalUserMessage = agentResponse;
@@ -54,8 +54,9 @@ export async function POST(request: Request) {
         messages: [
           {
             role: "system",
-            content: `you are a helpfull friendly assistant that answers user query and treats him like a friend and calls him bhai
-            instructions
+            content: `you are a helpfull friendly assistant that answers user query and treats him like a friend.
+
+            instructions:
             1. keep your answers short and concise
             2. if there is a tool response use it in the answer or just provide a nice stuctured answered with the agent response you will get.
             3. always provide answer in english or hinglish
